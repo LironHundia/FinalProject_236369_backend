@@ -1,0 +1,34 @@
+export const RABBITMQ_URL = 'amqps://fdtczxwk:r828qkAP9gjwtQfSmtcDUPddlBqv4JBt@roedeer.rmq.cloudamqp.com/fdtczxwk';
+
+//Exchange and Queue names
+export const COMMENT_QUEUE = "comment_queue";
+export const COMMENT_EXCHANGE = "comment_exchange";
+export const EVENT_UPDATE_QUEUE = "event_update_queue";
+export const EVENT_UPDATE_EXCHANGE = "event_update_exchange";
+export const ORDER_QUEUE = "order_queue";
+export const ORDER_EXCHANGE = "order_exchange";
+
+//Admin user
+export const ADMIN_USER = "admin";
+
+//Event URLS
+export const EVENT_API_BASE_URL = "/api/event/:id";
+export const GET_EVENT_BO = "/api/event/backoffice/:id";
+export const GET_AVAILABLE_EVENTS = "/api/event";
+export const CREATE_NEW_EVENT = "/api/event";
+export const UPDATE_EVENT = "/api/event/:id";
+export const BUY_TICKET_EVENT = "/api/event/buy/:id";
+export const SAVE_TICKET = "/api/event/save/:id";
+
+//User URLS
+export const GET_USER = "/api/user/:id";
+export const POST_COMMMENT = "/api/user/comment";
+export const BUY_TICKET_USER = "/api/user/buy";
+
+//Comment URLS
+export const GET_COMMENT_COUNT = "/api/comment/count/:event_id";
+export const GET_COMMENT = "/api/comment/:event_id";
+
+//Order URLS
+export const GET_ORDER = "/api/order/:user_id";
+export const GET_NEXT_EVENT = "/api/order/nextEvent/:user_id";
