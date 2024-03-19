@@ -46,6 +46,9 @@ app.post('/api/user/buy', userRoute.buyTicket); //TODO
 // Add new comment
 app.post('/api/comment', userRoute.addComment);
 
+// Update Next event date
+ //TODO - Need to implement with Message Broker (RabbitMQ) - see comment-service for reference
+
 // Delete all Users - for debugging
 app.delete('/api/user/empty', userRoute.deleteAllUsers);
 

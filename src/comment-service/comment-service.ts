@@ -23,10 +23,10 @@ db.once('open', () => {
 });
 
 // Get Comments array by Event ID
-app.get('/api/comment/:eventId', commentRoute.getCommentsArrayByEventId);
+app.get('/api/comment/:eventId', commentRoute.getCommentsArrayByEventId); //TODO
 
 // Get Comments count by Event ID
-app.get('/api/comment/backofficce/:eventId', commentRoute.getCommentsCountByEventId);
+app.get('/api/comment/backofficce/:eventId', commentRoute.getCommentsCountByEventId); //TODO
 
 // Delete All Comments - for debugging
 app.delete('/api/comment/empty', commentRoute.deleteAllComments);
