@@ -1,4 +1,6 @@
 import Joi from 'joi';  
+import { User, IUser } from './models/user-model.js';
+import * as constants from './const.js';
 
 //checks that date format is OK
 export function validateEventDates ( start_date: any, end_date:string ): boolean {
@@ -21,25 +23,29 @@ export function validateDateUpdate(currentEvent: any, start_date: any): boolean 
     return true;
 }
 
-export function createSuccessfulResponse (res: any, statusCode: number, data: string) {
-    res.setHeader("Content-Type", "application/json");
-    res.statusCode = statusCode;
-    if(data) {
-        res.end(data);
+export async function isAutherizedClient(username:string, permissionLevel: string) {
+    
+    //if worker level, no need to check the permission
+    if (permissionLevel === constants.MANAGER_LEVEL || permissionLevel === constants.ADMIN_LEVEL) {
+        // get user permission from DB
+        try {
+            const user: IUser | null = await User.findOne({ username: username }).exec();
+            if (!user) {
+                return false;
+            } else if (user.permission === constants.ADMIN_LEVEL) {
+                return true;
+            }
+            else if (user.permission === constants.MANAGER_LEVEL && permissionLevel === constants.MANAGER_LEVEL) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        } catch (error) {
+            // handle error
+            console.error('Error fetching user:', error);
+            return false;
+        }
     }
-    else {
-        res.end();
-    }
-    return;
-}
-
-export function createErrorResponse (res: any, statusCode: number, errorMessage: string = "") {
-    res.statusCode = statusCode;
-    if(errorMessage) {
-        res.end(errorMessage);
-    }
-    else {
-        res.end();
-    }
-    return;
-}
+    return true;
+  }

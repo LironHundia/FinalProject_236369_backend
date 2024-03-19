@@ -1,6 +1,6 @@
 import * as amqp from 'amqplib';
 import * as constants from '../const.js';
-import {AddComment} from './comment-service.js';
+import {AddComment} from './comment-routes.js';
 
 export const consumeMessages = async () => {
   try {

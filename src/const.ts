@@ -11,6 +11,16 @@ export const ORDER_EXCHANGE = "order_exchange";
 //Admin user
 export const ADMIN_USER = "admin";
 
+//Skip and limit for pagination
+export const DEFAULT_LIMIT = 25;
+export const DEFAULT_SKIP = 0;
+export const DEFAULT_PAGE = 1;
+
+//Permission levels
+export const BASIC_LEVEL = "B";
+export const MANAGER_LEVEL = "M";
+export const ADMIN_LEVEL = "A";
+
 //Event URLS
 export const EVENT_API_BASE_URL = "/api/event/:id";
 export const GET_EVENT_BO = "/api/event/backoffice/:id";

@@ -2,9 +2,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import * as dotenv from "dotenv";
-import { Comment } from '../models/comment-model.js';
 import {consumeMessages} from './consume-messages.js';
-import { string } from 'joi';
+import * as commentRoute from './comment-routes.js';
 
 const app = express();
 app.use(bodyParser.json());
@@ -23,52 +22,14 @@ db.once('open', () => {
   console.log('Connected to MongoDB');
 });
 
-// Add Comment
-app.post('/api/comment', async (req, res) => {
-  try {
-    const { eventId, text } = req.body;
-    const newComment = new Comment({ eventId, text });
-    await newComment.save();
-    res.status(201).json(newComment);
-  } catch (error) {
-    console.error('Error adding comment:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// Get Comments array by Event ID
+app.get('/api/comment/:eventId', commentRoute.getCommentsArrayByEventId);
 
-// Get Comments by Event ID
-app.get('/api/comment/:eventId', async (req, res) => {
-  try {
-    const eventId = req.params.eventId;
-    const comments = await Comment.find({ eventId });
-    res.status(200).json(comments);
-  } catch (error) {
-    console.error('Error getting comments:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// Get Comments count by Event ID
+app.get('/api/comment/backofficce/:eventId', commentRoute.getCommentsCountByEventId);
 
-app.delete('/api/comment/empty', async (req, res) => {
-  try {
-    // Delete all orders using deleteMany method
-    const deleteResult = await Comment.deleteMany({});
-    res.status(200).json({ message: 'comment DB deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting commentDB:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-export const AddComment = async (msg) => {
-  try {
-    const messageContent = JSON.parse(msg);
-    const { eventId, text } = messageContent;
-    const newComment = new Comment({ eventId, text });
-    await newComment.save();
-  } catch (error) {
-    console.error('Error adding comment:', error);
-  }
-};
+// Delete All Comments - for debugging
+app.delete('/api/comment/empty', commentRoute.deleteAllComments);
 
 consumeMessages();
 

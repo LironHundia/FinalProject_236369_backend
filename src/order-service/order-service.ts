@@ -2,7 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import * as dotenv from "dotenv";
-import {Order} from '../models/order-model.js';
+import * as orderRoute from './order-routes.js';
 
 const app = express();
 app.use(bodyParser.json());
@@ -24,28 +24,19 @@ db.once('open', () => {
 
 
 // Add Order
-app.post('/api/orders', async (req, res) => {
-  try {
-    const { userId, eventId, tickets } = req.body;
-    const newOrder = new Order({ userId, eventId, tickets });
-    await newOrder.save();
-    res.status(201).json(newOrder);
-  } catch (error) {
-    console.error('Error adding order:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+app.post('/api/orders', orderRoute.addOrder); //TODO - Need to move implementation to be with Message Broker (RabbitMQ) - see comment-service for reference
 
-app.delete('/api/order/empty', async (req, res) => {
-  try {
-    // Delete all orders using deleteMany method
-    const deleteResult = await Order.deleteMany({});
-    res.status(200).json({ message: 'Order deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting order:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// Update Order date
+ //TODO - Need to implement with Message Broker (RabbitMQ) - see comment-service for reference
+
+// Get next event by user ID
+app.get('/api/order/nextEvent/:userId', orderRoute.getUserNextEvent); //TODO
+
+// Get all Orders by user ID
+app.get('/api/order/:userId', orderRoute.getOrdersByUserId); //TODO
+
+// Delete All Orders - for debugging
+app.delete('/api/order/empty', orderRoute.deleteAllOrders);
 
 app.listen(port, () => {
   console.log(`Order Server running on port ${port}`);
