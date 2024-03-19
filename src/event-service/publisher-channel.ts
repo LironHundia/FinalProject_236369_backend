@@ -1,36 +1,36 @@
 import * as amqp from 'amqplib';
+import * as constants from '../const.js';
 
 export class PublisherChannel {
   channel: amqp.Channel;
 
   // Method to create a channel on the RabbitMQ connection
   async createChannel() {
-    const connection = await amqp.connect(
-      'amqps://uehgqbnf:S0nOmuKQDSCxr7BwOhS3XvAfx6_tu1Yi@sparrow.rmq.cloudamqp.com/uehgqbnf'
-    );
+    const connection = await amqp.connect(constants.RABBITMQ_URL);
     // Create a channel on this connection
     this.channel = await connection.createChannel();
   }
 
   // Method to send an event/message to a specified exchange
-  async sendEvent(msg: string) {
+  async sendEvent(exchange:string, queue:string, msg: string) {
     if (!this.channel) {
       await this.createChannel();
     }
 
-    const exchange = 'order_exchange';
+    // Declare the exchange with the specified name and type ('fanout')
+    await this.channel.assertExchange(exchange, 'direct', { durable: false });
 
-    // Declare an exchange with the specified name and type ('fanout').
-    // If the exchange doesn't exist, it will be created.
-    // `durable: false` means the exchange does not survive broker restarts
-    await this.channel.assertExchange(exchange, 'fanout', { durable: false });
+    // Declare the queue with the specified name
+    await this.channel.assertQueue(queue, { durable: false });
+
+    // Bind the queue to the exchange so that messages sent to the exchange are routed to this queue
+    await this.channel.bindQueue(queue, exchange, '');
 
     // Publish the message to the exchange
-    // The empty string as the second argument represents the routing key, which is not used by fanout exchanges
-    // `Buffer.from(msg)` converts the message string into a buffer for transmission
     await this.channel.publish(exchange, '', Buffer.from(msg));
+
     console.log(
-      `Publisher >>> | message "${msg}" published to exchange "${exchange}"`
+      `Publisher >>> | message "${msg}" published to exchange "${exchange}" and queue "${queue}"`
     );
   }
 }
