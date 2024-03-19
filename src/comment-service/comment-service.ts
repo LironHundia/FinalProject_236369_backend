@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import * as dotenv from "dotenv";
 import { Comment } from '../models/comment-model.js';
 import {consumeMessages} from './consume-messages.js';
+import { string } from 'joi';
 
 const app = express();
 app.use(bodyParser.json());

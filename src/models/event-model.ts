@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import Joi from 'joi';  
 
 export enum Category {
   Charity_Event = "Charity Event",
@@ -58,3 +59,30 @@ export interface IEvent extends Document {
 }
 
 export const Event = mongoose.model<IEvent>('Event', eventSchema);
+
+
+export const validateEvent = (messageBody: any) => {
+    // Define the ticketsCategories schema
+    const ticketsCategoriesJoiSchema = Joi.object({
+        type: Joi.string().required(),
+        price: Joi.number().required(),
+        initial_quantity: Joi.number().required(),
+        available_quantity: Joi.number().required(),
+    });
+
+    // Define the event schema
+    const eventJoiSchema = Joi.object({
+        name: Joi.string().required(),
+        category: Joi.string().valid('Charity Event', 'Concert', 'Conference', 'Convention', 'Exhibition', 'Festival', 'Product Launch', 'Sport Event').required(),
+        organizer: Joi.string().required(),
+        start_date: Joi.string().isoDate().required(),
+        end_date: Joi.string().isoDate().required(),
+        description: Joi.string().required(),
+        tickets: Joi.array().items(ticketsCategoriesJoiSchema).min(1).required(),
+        total_available_tickets: Joi.number().required(),
+        image_url: Joi.string().uri().allow('').optional(), //add difault image url if not provided
+    }).unknown();
+
+    // Validate the message body
+    return eventJoiSchema.validate(messageBody);
+}

@@ -1,11 +1,45 @@
-import * as mongoose from "mongoose";
-import { v4 as uuidv4 } from 'uuid';
+import mongoose, { Schema, Document } from 'mongoose';
+import Joi from 'joi';  
 
-// User Schema
-const userSchema = new mongoose.Schema({
-  userId: { type: String, default: uuidv4() },
+// Define the ticketsCategories schema
+const nextEventSchema = new Schema({
+  event_name: String,
+  event_id: Number,
+  event_start_date: String,
+  event_end_date: String,
+} , {_id: false} );
+
+// Define the event schema
+const userSchema = new Schema({
   username: String,
-  permission: String,
+  num_of_oderes_made: Number,
+  end_date: String,
+  description: String,
+  next_event: nextEventSchema,
 });
 
-export const User = mongoose.model('User', userSchema);
+export interface IUser extends Document {
+  username: string;
+  num_of_oderes_made: number;
+  next_event: {
+    event_name: string;
+    event_id: number;
+    event_start_date: string;
+    event_end_date: string;
+  };
+}
+
+export const User = mongoose.model<IUser>('User', userSchema);
+
+
+export const validateUserComment = (messageBody: any) => {
+  // Define the event schema
+  const eventJoiSchema = Joi.object({
+      event_id: Joi.string().required(),
+      username: Joi.string().required(),
+      comment: Joi.string().required(),
+  });
+
+  // Validate the message body
+  return eventJoiSchema.validate(messageBody);
+}

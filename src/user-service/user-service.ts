@@ -3,7 +3,8 @@ import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import * as dotenv from "dotenv";
 import * as constants from '../const.js';
-import { User } from '../models/user-model.js';
+import { createSuccessfulResponse, createErrorResponse } from '../utilities.js';
+import { User, IUser, validateUserComment } from '../models/user-model.js';
 import {PublisherChannel} from './publisher-channel.js';
 
 const app = express();
@@ -25,28 +26,51 @@ db.once('open', () => {
 
 const publisherChannel = new PublisherChannel();
 
-// Add User
+// Add new User
 app.post('/api/user', async (req, res) => {
+  // Validate the request body
+  const {username} = req.body;
+  if (!username) {
+    return createErrorResponse(res, 400, JSON.stringify({ error: "Bad Request - username is required" }));
+  }
+
+  // Ensure that the user does not exist -- TODO: Ensure in API Gateway
+  try{
+    const user = await User.findOne({ username: req.body.username });
+    if (user) {
+      return createErrorResponse(res, 400, JSON.stringify({ error: 'Username already exists' }));
+    }
+  }
+  catch (error) {
+    console.error('Error finding user:', error);
+    return createErrorResponse(res, 500, JSON.stringify({ error: 'Internal server error' }));
+  }
+  // Create new user
   try {
-    const { username, permission } = req.body;
-    const newUser = new User({ username, permission });
+    const newUser: IUser = new User({ username: req.body.username, num_of_oderes_made: 0, next_event: { event_name: '', event_id: 0, event_start_date: '', event_end_date: '' }});
     await newUser.save();
-    res.status(201).json(newUser);
+    return createSuccessfulResponse(res, 201, JSON.stringify(newUser));
   } catch (error) {
     console.error('Error adding user:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return createErrorResponse(res, 500, JSON.stringify({ error: 'Internal server error' }));
   }
 });
 
+// Add new comment
 app.post('/api/user/comment', async (req, res) => {
+  // Validate the request body
+  const {error} = validateUserComment(req.body);
+  if (error) {
+    console.error('Error validating user comment:', error);
+    return createErrorResponse(res, 400, JSON.stringify({ error: error.details[0].message }));
+  }
   try {
     await publisherChannel.sendEvent(constants.COMMENT_EXCHANGE, constants.COMMENT_QUEUE, JSON.stringify(req.body));
-    res.statusCode = 201;
-    res.end("we have received your comment");
+    return createSuccessfulResponse(res, 201, JSON.stringify({message: 'Comment added successfully'}));
   }
   catch (error) {
     console.error('Error adding event:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return createErrorResponse(res, 500, JSON.stringify({ error: 'Internal server error' }));
   }
 });
 
