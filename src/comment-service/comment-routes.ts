@@ -63,7 +63,7 @@ export async function deleteAllComments(req: Request, res: Response)
 export async function add(req: Request, res: Response)
 {
     try {
-        const comment = new Comment({ eventId: req.body.eventId, userName: req.body.userName, text: req.body.text }); 
+        const comment = new Comment({ eventId: req.body.eventId, author: req.body.author, comment: req.body.comment }); 
         await comment.save();
         res.status(200).json({ message: 'Comment added successfully', id: comment._id });
      
