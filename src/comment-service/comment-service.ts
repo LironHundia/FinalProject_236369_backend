@@ -13,7 +13,8 @@ dotenv.config();
 
 const port = process.env.PORT || 3004;
 
-const dbURI = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@finalproject.szjndb6.mongodb.net/EventsBooking?retryWrites=true&w=majority&appName=FinalProject`;
+
+const dbURI = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@mycluster.fs213ja.mongodb.net/`;
 await mongoose.connect(dbURI);
 const db = mongoose.connection;
 
@@ -22,14 +23,20 @@ db.once('open', () => {
   console.log('Connected to MongoDB');
 });
 
-// Get Comments array by Event ID
-app.get('/api/comment/:eventId', commentRoute.getCommentsArrayByEventId); //TODO
-
 // Get Comments count by Event ID
-app.get('/api/comment/backofficce/:eventId', commentRoute.getCommentsCountByEventId); //TODO
+app.get('/api/comment/backofficce/:eventId?', commentRoute.getCommentsCountByEventId);
+
+// Get Comments array by Event ID
+app.get('/api/comment/:eventId?', commentRoute.getCommentsArrayByEventId);
 
 // Delete All Comments - for debugging
 app.delete('/api/comment/empty', commentRoute.deleteAllComments);
+
+// for debugging
+app.post('/api/comment', commentRoute.add);
+
+app.all('*', (req, res) => {
+  res.status(400).json({ error: 'Bad Request' });});
 
 consumeMessages();
 
