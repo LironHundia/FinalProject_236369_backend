@@ -1,6 +1,6 @@
 import { Comment } from '../models/comment-model.js';
 import { Request, Response } from 'express';
-import * as constants from '../const.js';
+import { setLimit, setSkip } from '../utilities.js';
 
 
 export async function getCommentsArrayByEventId(req: Request, res: Response)
@@ -10,22 +10,12 @@ export async function getCommentsArrayByEventId(req: Request, res: Response)
         return res.status(400).json({ error: 'EventId is required' });
     }
 
-    let limit = constants.DEFAULT_LIMIT;
-    let skip = constants.DEFAULT_SKIP;
-    if (typeof req.query.limit === 'string') {
-        const parsedLimit = parseInt(req.query.limit, 10);
-        limit = parsedLimit >= 0 ? parsedLimit : limit;
-    }
-    if (typeof req.query.skip === 'string') {
-        const parsedSkip = parseInt(req.query.skip, 10);
-        skip = parsedSkip >= 0 ? parsedSkip : skip;
-    }
-    try {
-        const comments = await Comment.find({ eventId: eventId })
-            .skip(skip)
-            .limit(limit);
+    let limit = setLimit(req.query.limit);
+    let skip = setSkip(req.query.skip); 
 
-        res.status(200).json({ message: 'Comments fetched successfully', comments: comments });
+    try {
+        const comments = await Comment.find({ eventId: eventId }).skip(skip).limit(limit);
+        res.status(200).json({ comments: comments });
     } catch (error) {
         console.error('Error fetching comments:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -39,7 +29,7 @@ export async function getCommentsCountByEventId(req: Request, res: Response)
         return res.status(400).json({ error: 'EventId is required' });
     try {
         const count = await Comment.countDocuments({ eventId: eventId });
-        res.status(200).json({ message: 'Count fetched successfully', count: count });
+        res.status(200).json({ count: count });
     } catch (error) {
         console.error('Error fetching count:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -65,7 +55,7 @@ export async function add(req: Request, res: Response)
     try {
         const comment = new Comment({ eventId: req.body.eventId, author: req.body.author, comment: req.body.comment }); 
         await comment.save();
-        res.status(200).json({ message: 'Comment added successfully', id: comment._id });
+        res.status(201).json({ message: 'Comment added successfully', id: comment._id });
      
     } catch (error) {
         console.error('Error adding:', error);

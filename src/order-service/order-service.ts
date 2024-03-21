@@ -13,7 +13,7 @@ dotenv.config();
 const port = process.env.PORT || 3003;
 
 // Connect to MongoDB
-const dbURI = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@finalproject.szjndb6.mongodb.net/EventsBooking?retryWrites=true&w=majority&appName=FinalProject`;
+const dbURI = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@mycluster.fs213ja.mongodb.net/`;
 await mongoose.connect(dbURI);
 const db = mongoose.connection;
 
@@ -30,13 +30,16 @@ app.post('/api/orders', orderRoute.addOrder); //TODO - Need to move implementati
  //TODO - Need to implement with Message Broker (RabbitMQ) - see comment-service for reference
 
 // Get next event by user ID
-app.get('/api/order/nextEvent/:userId', orderRoute.getUserNextEvent); //TODO
+app.get('/api/order/nextEvent/:userId?', orderRoute.getUserNextEvent); 
 
 // Get all Orders by user ID
-app.get('/api/order/:userId', orderRoute.getOrdersByUserId); //TODO
+app.get('/api/order/:userId?', orderRoute.getOrdersByUserId); 
 
 // Delete All Orders - for debugging
 app.delete('/api/order/empty', orderRoute.deleteAllOrders);
+
+app.all('*', (req, res) => {
+  res.status(400).json({ error: 'Bad Request' });});
 
 app.listen(port, () => {
   console.log(`Order Server running on port ${port}`);

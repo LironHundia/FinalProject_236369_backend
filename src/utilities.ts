@@ -49,3 +49,23 @@ export async function isAutherizedClient(username:string, permissionLevel: strin
     }
     return true;
   }
+
+  export function setLimit (limit: any) : number {
+    let ret = constants.DEFAULT_LIMIT;
+    
+    if (typeof limit === 'string') {
+        const parsedLimit = parseInt(limit, 10);
+        ret = parsedLimit >= 0 ? parsedLimit : ret;
+    }
+    return ret;
+  }
+
+    export function setSkip (skip: any) : number {
+        let ret = constants.DEFAULT_SKIP;
+        
+        if (typeof skip === 'string') {
+            const parsedSkip = parseInt(skip, 10);
+            ret = parsedSkip >= 0 ? parsedSkip : ret;
+        }
+        return ret;
+    }
