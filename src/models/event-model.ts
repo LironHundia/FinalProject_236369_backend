@@ -20,6 +20,15 @@ const ticketsCategoriesSchema = new Schema({
     available_quantity: Number,
  } ,  {_id: false} );
 
+// Define the reservation schema
+ const reservationSchema = new mongoose.Schema({
+    orderId: String,
+    ticketType: String,
+    quantity: Number,
+    expiresAt: Date,
+    confirmed: { type: Boolean, default: false }
+  });
+
 // Define the event schema
 const eventSchema = new Schema({
     name: String,
@@ -28,12 +37,13 @@ const eventSchema = new Schema({
     start_date: String,
     end_date: String,
     description: String,
+    total_available_tickets: Number,
+    image_url: String,
     tickets: {
         type: [ticketsCategoriesSchema],
         validate: [arrayLimit, 'expects at least 1 ticket item!.']
     },
-    total_available_tickets: Number,
-    image_url: String,
+    reservations: [reservationSchema],
 });
 
 function arrayLimit(val: Array<any>) {
@@ -47,15 +57,21 @@ export interface IEvent extends Document {
     start_date: string;
     end_date: string;
     description: string;
+    total_available_tickets: number;
+    image_url: string;
     tickets: Array<{
         type: string;
         price: number;
         initial_quantity: number;
         available_quantity: number;
     }>;
-    total_available_tickets: number;
-    image_url: string;
-    is_event_available: boolean;
+    reservations: Array<{
+        orderId: string;
+        ticketType: string;
+        quantity: number;
+        expiresAt: Date;
+        confirmed: boolean;
+    }>;
 }
 
 export const Event = mongoose.model<IEvent>('Event', eventSchema);

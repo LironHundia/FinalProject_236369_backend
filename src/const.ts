@@ -1,4 +1,10 @@
+// URI's
 export const RABBITMQ_URL = 'amqps://fdtczxwk:r828qkAP9gjwtQfSmtcDUPddlBqv4JBt@roedeer.rmq.cloudamqp.com/fdtczxwk';
+export const CLIENT_SERVER_URL = 'http://localhost:3000';
+export const EVENT_SERVER_URL = 'http://localhost:3001';
+export const USER_SERVER_URL = 'http://localhost:3002';
+export const COMMENT_SERVER_URL = 'http://localhost:3004';
+export const PAYMENT_API_URL = 'https://www.cs-wsp.net/_functions/pay';
 
 //Exchange and Queue names
 export const COMMENT_QUEUE = "comment_queue";
@@ -7,6 +13,15 @@ export const EVENT_UPDATE_QUEUE = "event_update_queue";
 export const EVENT_UPDATE_EXCHANGE = "event_update_exchange";
 export const ORDER_QUEUE = "order_queue";
 export const ORDER_EXCHANGE = "order_exchange";
+
+//Status codes
+export const STATUS_OK = 200;
+export const STATUS_CREATED = 201;
+export const STATUS_BAD_REQUEST = 400;
+export const STATUS_UNAUTHORIZED = 401;
+export const STATUS_FORBIDDEN = 403;
+export const STATUS_NOT_FOUND = 404;
+export const STATUS_INTERNAL_SERVER_ERROR = 500;
 
 //Admin user
 export const ADMIN_USER = "admin";

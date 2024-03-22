@@ -37,10 +37,10 @@ app.get('/api/event', eventRoute.getAllAvailableEvents); //TODO - CHECK
 app.get('/api/event/all', eventRoute.getAllEvents); //TODO - CHECK
 
 // Secure Tickets
-app.post('/api/event/secure/:eventId', eventRoute.secureTickets);  //TODO
+app.post('/api/event/secure', eventRoute.secureTickets);  //TODO
 
 // Buy Tickets
-app.post('/api/event/buy/:eventId', eventRoute.buyTickets);  //TODO
+app.post('/api/event/confirm', eventRoute.buyTickets);  //TODO
 
 // Delete All Events - for debugging
 app.delete('/api/event/empty', eventRoute.deleteAllEvents);
