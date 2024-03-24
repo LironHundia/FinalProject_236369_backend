@@ -279,7 +279,7 @@ export async function buyTickets(req: Request, res: Response)
             reservation.confirmed = true;
             await event.save();
 
-            res.status(constants.STATUS_OK).json({ message: 'Tickets purchase confirmed', start_date: event.start_date, end_date: event.end_date});
+            res.status(constants.STATUS_OK).json({ message: 'Tickets purchase confirmed', event_name: event.name ,start_date: event.start_date, end_date: event.end_date});
         } else {
             res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Reservation not found or already confirmed' });
         }

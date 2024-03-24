@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import * as constants from '../const.js';
 import { Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import {PublisherChannel} from './publisher-channel.js';
+import { PublisherChannel } from './publisher-channel.js';
 import { User, IUser, validateUserComment, validateUserCredentials, validatePermissionCredentials } from '../models/user-model.js';
 import { isAutherizedClient } from '../utilities.js';
 import axios from 'axios';
@@ -11,61 +11,54 @@ import { v4 as uuidv4 } from 'uuid';
 
 const publisherChannel = new PublisherChannel();
 
-export async function login(req: Request, res: Response) 
-{
+export async function login(req: Request, res: Response) {
     const credentials = req.body;
     const { error } = validateUserCredentials(credentials);
-    if(error)
-    {
+    if (error) {
         console.error('Error validating user credentials:', error);
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
         return;
     }
-  
+
     let user;
-  
+
     try {
-      user = await User.findOne({ username: credentials.username });
+        user = await User.findOne({ username: credentials.username });
     }
     catch (e) {
-      res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
-      return;
+        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
+        return;
     }
-  
+
     if (!user || !await bcrypt.compare(credentials.password, user.password)) {
-      res.status(constants.STATUS_UNAUTHORIZED).send('Invalid credentials');
-      return;
+        res.status(constants.STATUS_UNAUTHORIZED).send('Invalid credentials');
+        return;
     }
-  
+
     const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '2d' })
-  
+
     const secure = process.env.NODE_ENV === 'production';
     res.cookie('token', token, { httpOnly: true, secure: secure, sameSite: 'none' });
     res.status(constants.STATUS_OK).send('Logged in');
 }
-  
-export async function logout(req: Request, res: Response) 
-{
+
+export async function logout(req: Request, res: Response) {
     const secure = process.env.NODE_ENV === 'production';
     res.clearCookie('token', { httpOnly: true, secure: secure, sameSite: 'none' });
 }
-  
-export async function signup(req: Request, res: Response) 
-{
+
+export async function signup(req: Request, res: Response) {
     // Validate the request body
     const credentials = req.body;
     const { error } = validateUserCredentials(credentials);
-    if(error)
-    {
+    if (error) {
         console.error('Error validating user credentials:', error);
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
         return;
     }
     // Ensure that the user does not exist
-    try 
-    {
-        if (await User.exists({ username: credentials.username })) 
-        {
+    try {
+        if (await User.exists({ username: credentials.username })) {
             res.status(constants.STATUS_BAD_REQUEST).send('Username already exists');
             return;
         }
@@ -73,12 +66,14 @@ export async function signup(req: Request, res: Response)
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Error creating user');
         return;
     }
-    
+
     // Create new user
     const encryptPassword = await bcrypt.hash(credentials.password, 10);
     try {
-        const newUser: IUser = new User({ username: credentials.username, password: encryptPassword, permission: "B", num_of_oderes_made: 0, 
-                                        next_event: { event_name: '', event_id: 0, event_start_date: '', event_end_date: '' }});
+        const newUser: IUser = new User({
+            username: credentials.username, password: encryptPassword, permission: "B", num_of_oderes_made: 0,
+            next_event: { event_name: '', event_id: 0, event_start_date: '', event_end_date: '' }
+        });
         await newUser.save();
     }
     catch (error) {
@@ -86,46 +81,43 @@ export async function signup(req: Request, res: Response)
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Error creating user');
         return;
     }
-  
+
     res.status(constants.STATUS_CREATED).send('User created');
 }
-  
-export async function getUsername(req: Request, res: Response) 
-{
+
+export async function getUsername(req: Request, res: Response) {
     const token = req.cookies.token;
     if (!token) {
-      res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
-      return;
+        res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
+        return;
     }
-  
+
     let username;
     try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
-      username = (payload as JwtPayload).username;
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        username = (payload as JwtPayload).username;
     }
     catch (e) {
-      res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
-      return;
+        res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
+        return;
     }
-  
-    res.status(constants.STATUS_OK).send({username});
+
+    res.status(constants.STATUS_OK).send({ username });
 }
 
-export async function updatePermissions(req: Request, res: Response)
-{
+export async function updatePermissions(req: Request, res: Response) {
     // check if the user logged in
     const token = req.cookies.token;
     if (!token) {
-      res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
-      return;
+        res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
+        return;
     }
     // check if the user has the permission to update permissions
     let username;
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         username = (payload as JwtPayload).username;
-        if(!payload)
-        {
+        if (!payload) {
             res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
             return;
         }
@@ -139,9 +131,8 @@ export async function updatePermissions(req: Request, res: Response)
         return;
     }
     // Validate the request body
-    const {error} = validatePermissionCredentials(req.body);
-    if (error) 
-    {
+    const { error } = validatePermissionCredentials(req.body);
+    if (error) {
         res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - username and permission are required');
         return;
     }
@@ -157,20 +148,18 @@ export async function updatePermissions(req: Request, res: Response)
     }
 }
 
-export async function getUser(req: Request, res: Response)
-{
+export async function getUser(req: Request, res: Response) {
     // check if the user logged in
     const token = req.cookies.token;
     if (!token) {
-      res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
-      return;
+        res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
+        return;
     }
     // check if the user has the permission to update permissions
     let username: string | null;
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
-        if(!payload)
-        {
+        if (!payload) {
             res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
             return;
         }
@@ -201,10 +190,9 @@ export async function getUser(req: Request, res: Response)
     }
 }
 
-export async function addComment(req: Request, res: Response)
-{
+export async function addComment(req: Request, res: Response) {
     // Validate the request body
-    const {error} = validateUserComment(req.body);
+    const { error } = validateUserComment(req.body);
     if (error) {
         console.error('Error validating user comment:', error);
         res.status(constants.STATUS_BAD_REQUEST).send(JSON.stringify({ error: error.details[0].message }));
@@ -222,13 +210,11 @@ export async function addComment(req: Request, res: Response)
     }
 }
 
-export async function buyTicket(req: Request, res: Response)
-{
+export async function buyTicket(req: Request, res: Response) {
     const { userId, eventId, ticketType, quantity } = req.body;
     const orderId = uuidv4();
 
-    try 
-    {
+    try {
         // Step 1: Ask the Event Server to secure tickets
         const secureResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/secure`, {
             eventId,
@@ -237,7 +223,7 @@ export async function buyTicket(req: Request, res: Response)
             quantity,
             orderId
         });
-    
+
         if (secureResponse.status === constants.STATUS_OK) {
             // Step 2: Call the Payment API
             const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
@@ -248,54 +234,51 @@ export async function buyTicket(req: Request, res: Response)
                 exp,
                 charge
             });
-    
+
             if (paymentResponse.status === constants.STATUS_OK) {
                 // Step 3: Confirm the purchase with the Event Server
                 const confirmResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/confirm`, {
                     eventId,
                     orderId
                 });
-        
+
                 if (confirmResponse.status === constants.STATUS_OK) {
                     //Publish new order made!
-                    const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date})
+                    const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
                     publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
                     res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
-                } 
+                }
                 else { //confirmation failed
                     res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Tickets final purchase failed.', orderId });
                 }
-            } 
+            }
             else { //payment failed
                 // Handle payment failure
                 res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Payment failed. Please try again.', orderId });
             }
-        } 
+        }
         else { //secure tickets failed
             return res.status(secureResponse.status).json({ message: secureResponse.data.message });
         }
     } catch (error) {
-      res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket purchase', error: error.message });
+        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket purchase', error: error.message });
     }
 }
 
-export async function retryBuyTicket(req: Request, res: Response)
-{
+export async function retryBuyTicket(req: Request, res: Response) {
     const { userId, eventId, orderId, ticketType, quantity } = req.body;
-    if(!userId || !eventId || !orderId)
-    {
+    if (!userId || !eventId || !orderId) {
         res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Missing parameters' });
         return;
     }
-    try 
-    {
+    try {
         // Step 1: Ask the Event Server to ensuer this order still exists
         const secureResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/ensureSecured`, {
             eventId,
             userId,
             orderId
         });
-    
+
         if (secureResponse.status === constants.STATUS_OK) {
             // Step 2: Call the Payment API
             const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
@@ -306,39 +289,40 @@ export async function retryBuyTicket(req: Request, res: Response)
                 exp,
                 charge
             });
-    
+
             if (paymentResponse.status === constants.STATUS_OK) {
                 // Step 3: Confirm the purchase with the Event Server
                 const confirmResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/confirm`, {
                     eventId,
                     orderId
                 });
-        
+
                 if (confirmResponse.status === constants.STATUS_OK) {
                     //Publish new order made!
-                    const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date})
+                    const msg = JSON.stringify({ userId, eventId, eventName: confirmResponse.data.eventName, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
                     publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
+                    //Update user with new event
+                    updateUserNewOrder(userId, eventId, confirmResponse.data.eventName, confirmResponse.data.start_date, confirmResponse.data.end_date)
                     res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
-                } 
+                }
                 else { //confirmation failed
                     res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Tickets final purchase failed.', orderId });
                 }
-            } 
+            }
             else { //payment failed
                 // Handle payment failure
                 res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Payment failed. Please try again.', orderId });
             }
-        } 
+        }
         else { //tickets are not secured
             return res.status(secureResponse.status).json({ message: "tickets are no longer secured! start process again" });
         }
     } catch (error) {
-      res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket *retry* purchase', error: error.message });
+        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket *retry* purchase', error: error.message });
     }
 }
 
-export async function deleteAllUsers(req: Request, res: Response)
-{
+export async function deleteAllUsers(req: Request, res: Response) {
     try {
         // Delete all comments except the one with the specified ID
         const deleteResult = await User.deleteMany({ username: { $ne: constants.ADMIN_USER } });
@@ -353,3 +337,44 @@ export async function deleteAllUsers(req: Request, res: Response)
 ////////////////////////////////////////////////////////////////////////////////////////
 // helper functions
 ////////////////////////////////////////////////////////////////////////////////////////
+export const updatUserNextEvent = async (msg) => {
+    const messageContent = JSON.parse(msg);
+    const userToUpdate: IUser = await User.findById(messageContent.userId);
+    if (!userToUpdate) {
+        console.error('User not found in updateNextEvent function');
+        return;
+    }
+    else if(userToUpdate.next_event.event_start_date > messageContent.start_date)
+    {
+        userToUpdate.next_event.event_name = messageContent.eventName;
+        userToUpdate.next_event.event_id = messageContent.eventId;
+        userToUpdate.next_event.event_start_date = messageContent.start_date;
+        userToUpdate.next_event.event_end_date = messageContent.end_date;
+    }
+    return;
+}
+
+export const updateUserNewOrder = async (userId, eventId, eventName, start_date, end_date) => {
+    try {    
+        const userToUpdate: IUser = await User.findById(userId);
+        if (!userToUpdate) {
+            console.error('User not found in updateNextEvent function');
+            return;
+        }
+        //if this is the first order or the new event is before the current event
+        if(userToUpdate.num_of_orders_made === 0 || userToUpdate.next_event.event_start_date > start_date)
+        {
+            userToUpdate.next_event.event_name = eventName;
+            userToUpdate.next_event.event_id = eventId;
+            userToUpdate.next_event.event_start_date = start_date;
+            userToUpdate.next_event.event_end_date = end_date;
+        }
+        userToUpdate.num_of_orders_made += 1;
+        await userToUpdate.save();
+        return;
+    }
+    catch (error) {
+        console.error('Error updating user:', error);
+        return;
+    }
+}

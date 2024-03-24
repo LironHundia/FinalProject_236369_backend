@@ -30,7 +30,7 @@ export interface IUser extends Document {
   username: string;
   password: string;
   permission: string;
-  num_of_oderes_made: number;
+  num_of_orders_made: number;
   next_event: {
     event_name: string;
     event_id: number;

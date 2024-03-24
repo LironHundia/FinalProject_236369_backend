@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import * as dotenv from "dotenv";
 import * as constants from '../const.js';
 import * as userRoute from './user-routes.js';
+import {consumeMessages} from './consume-messages.js';
 
 const app = express();
 app.use(bodyParser.json());
@@ -54,6 +55,8 @@ app.post('/api/comment', userRoute.addComment);
 
 // Delete all Users - for debugging
 app.delete('/api/user/empty', userRoute.deleteAllUsers);
+
+consumeMessages();
 
 app.listen(port, () => {
   console.log(`User Server running on port ${port}`);
