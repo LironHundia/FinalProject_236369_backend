@@ -5,7 +5,6 @@ import * as dotenv from "dotenv";
 import cookieParser from 'cookie-parser';
 import * as constants from '../const.js';
 import * as userRoute from './user-routes.js';
-import httpProxy from 'express-http-proxy';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import {checkPermissionProxyMiddleware} from '../middleware.js';
 
