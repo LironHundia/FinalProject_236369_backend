@@ -20,8 +20,8 @@ import { setLimit, setSkip } from '../utilities.js';
 export async function addNewOrderFromListener(msg: string) {
     try {
         const messageContent = JSON.parse(msg);
-        const { userId, eventId, quantity, totalPrice, ticketsType, startDate, endDate } = messageContent;
-        const newOrder = new Order({ userId, eventId, quantity, totalPrice, ticketsType, startDate, endDate });
+        const { userId, eventId, quantity, totalPrice, ticketType, start_date, end_date } = messageContent;
+        const newOrder = new Order({ userId, eventId, quantity, totalPrice, ticketsType: ticketType, startDate:start_date, endDate:end_date });
         await newOrder.save();
     } catch (error) {
         console.error('Error adding order:', error);

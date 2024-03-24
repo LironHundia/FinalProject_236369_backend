@@ -5,7 +5,6 @@ import * as dotenv from "dotenv";
 import cookieParser from 'cookie-parser';
 import * as constants from '../const.js';
 import * as userRoute from './user-routes.js';
-import {consumeMessages} from './consume-messages.js';
 
 const app = express();
 app.use(bodyParser.json());
@@ -16,7 +15,7 @@ dotenv.config();
 
 const port = process.env.PORT || 3002;
 
-const dbURI = constants.MONGODB_URL_LIRON;
+const dbURI = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@finalproject.szjndb6.mongodb.net/EventsBooking?retryWrites=true&w=majority&appName=FinalProject`;
 await mongoose.connect(dbURI);
 const db = mongoose.connection;
 
@@ -52,13 +51,8 @@ app.post('/api/user/secure', userRoute.secureTicket);
 // Add new comment
 app.post('/api/comment', userRoute.addComment);
 
-// Update Next event date
- //TODO - Need to implement with Message Broker (RabbitMQ) - see comment-service for reference
-
 // Delete all Users - for debugging
 app.delete('/api/user/empty', userRoute.deleteAllUsers);
-
-consumeMessages();
 
 app.listen(port, () => {
   console.log(`User Server running on port ${port}`);

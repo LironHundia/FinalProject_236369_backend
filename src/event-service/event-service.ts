@@ -13,7 +13,7 @@ dotenv.config();
 
 let port = process.env.PORT || 3001;
 
-const dbURI =  constants.MONGODB_URL_LIRON;
+const dbURI =  `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@finalproject.szjndb6.mongodb.net/EventsBooking?retryWrites=true&w=majority&appName=FinalProject`;
 await mongoose.connect(dbURI);
 const db = mongoose.connection;
 

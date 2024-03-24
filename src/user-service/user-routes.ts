@@ -281,7 +281,7 @@ export async function buyTicket(req: Request, res: Response) {
 
             if (confirmResponse.status === constants.STATUS_OK) {
                 //Publish new order made!
-                const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
+                const msg = JSON.stringify({ userId, eventId, quantity, totalPrice: charge, ticketType, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
                 publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
                 res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
             }
@@ -306,49 +306,5 @@ export async function deleteAllUsers(req: Request, res: Response) {
     } catch (error) {
         console.error('Error deleting userDB:', error);
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ error: 'Internal server error' });
-    }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-// helper functions
-////////////////////////////////////////////////////////////////////////////////////////
-export const updatUserNextEvent = async (msg) => {
-    const messageContent = JSON.parse(msg);
-    const userToUpdate: IUser = await User.findById(messageContent.userId);
-    if (!userToUpdate) {
-        console.error('User not found in updateNextEvent function');
-        return;
-    }
-    else if (userToUpdate.next_event.event_start_date > messageContent.start_date) {
-        userToUpdate.next_event.event_name = messageContent.eventName;
-        userToUpdate.next_event.event_id = messageContent.eventId;
-        userToUpdate.next_event.event_start_date = messageContent.start_date;
-        userToUpdate.next_event.event_end_date = messageContent.end_date;
-    }
-    return;
-}
-
-export const updateUserNewOrder = async (userId, eventId, eventName, start_date, end_date) => {
-    try {
-        const userToUpdate: IUser = await User.findById(userId);
-        if (!userToUpdate) {
-            console.error('User not found in updateNextEvent function');
-            return;
-        }
-        //if this is the first order or the new event is before the current event
-        if (userToUpdate.num_of_orders_made === 0 || userToUpdate.next_event.event_start_date > start_date) {
-            userToUpdate.next_event.event_name = eventName;
-            userToUpdate.next_event.event_id = eventId;
-            userToUpdate.next_event.event_start_date = start_date;
-            userToUpdate.next_event.event_end_date = end_date;
-        }
-        userToUpdate.num_of_orders_made += 1;
-        await userToUpdate.save();
-        return;
-    }
-    catch (error) {
-        console.error('Error updating user:', error);
-        return;
     }
 }

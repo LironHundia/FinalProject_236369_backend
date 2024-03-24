@@ -7,36 +7,17 @@ enum Permission {
   Basice = "B",
 }
 
-// Define the ticketsCategories schema
-const nextEventSchema = new Schema({
-  event_name: String,
-  event_id: Number,
-  event_start_date: String,
-  event_end_date: String,
-} , {_id: false} );
-
 // Define the event schema
 const userSchema = new Schema({
   username: String,
   password: String,
   permission: { type: String, enum: Object.values(Permission) },
-  num_of_oderes_made: Number,
-  end_date: String,
-  description: String,
-  next_event: nextEventSchema,
 });
 
 export interface IUser extends Document {
   username: string;
   password: string;
   permission: string;
-  num_of_orders_made: number;
-  next_event: {
-    event_name: string;
-    event_id: number;
-    event_start_date: string;
-    event_end_date: string;
-  };
 }
 
 export const User = mongoose.model<IUser>('User', userSchema);
