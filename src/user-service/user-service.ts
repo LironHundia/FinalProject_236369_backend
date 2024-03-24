@@ -41,7 +41,10 @@ app.put('/api/permission', userRoute.updatePermissions); //TODO - CHECK
 app.get('/api/user', userRoute.getUser);
 
 // Buy Ticket
-app.post('/api/user/buy', userRoute.buyTicket); //TODO
+app.post('/api/user/buy', userRoute.buyTicket);
+
+// Retry Buy Ticket
+app.post('/api/user/retry', userRoute.retryBuyTicket);
 
 // Add new comment
 app.post('/api/comment', userRoute.addComment);

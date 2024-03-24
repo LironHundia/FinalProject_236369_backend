@@ -182,8 +182,26 @@ export async function getAllEvents(req: Request, res: Response) {
     }
 }
 
-export async function secureTickets(req: Request, res: Response) {
-    const { eventId, ticketType, quantity, orderId } = req.body;
+export async function ensureSecuredTickets(req: Request, res: Response) 
+{
+    const { eventId, userId, orderId } = req.body;
+    const event = await Event.findById(eventId);
+    const reservation = event.reservations.find(res => {res.orderId === orderId, res.userId === userId});
+    if(reservation)
+    {
+        res.status(constants.STATUS_OK).json({ message: 'Reservation already exists' });
+        return;
+    }
+    else
+    {
+        res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Reservation not found or out of date' });
+        return;
+    }
+}
+
+export async function secureTickets(req: Request, res: Response) 
+{
+    const { eventId, userId, ticketType, quantity, orderId } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
         res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - eventId is not a valid ObjectId');
@@ -202,6 +220,7 @@ export async function secureTickets(req: Request, res: Response) {
             // Add a temporary reservation with orderId and expiry time
             event.reservations.push({
                 orderId,
+                userId,
                 ticketType,
                 quantity,
                 expiresAt: new Date(Date.now() + 2 * 60000), // 2 minutes from now
@@ -232,6 +251,9 @@ export async function secureTickets(req: Request, res: Response) {
                         await eventToUpdate.save();
                     }
                 }
+                else {
+                    console.log('Reservation not found');
+                }
             }, 2 * 60000); // 2 minutes
 
             res.status(constants.STATUS_OK).json({ message: 'Tickets secured', orderId });
@@ -243,7 +265,8 @@ export async function secureTickets(req: Request, res: Response) {
     }
 }
 
-export async function buyTickets(req: Request, res: Response) {
+export async function buyTickets(req: Request, res: Response) 
+{
     // Endpoint to confirm ticket purchase
     const { eventId, orderId } = req.body;
 
@@ -256,7 +279,7 @@ export async function buyTickets(req: Request, res: Response) {
             reservation.confirmed = true;
             await event.save();
 
-            res.status(constants.STATUS_OK).json({ message: 'Tickets purchase confirmed', orderId });
+            res.status(constants.STATUS_OK).json({ message: 'Tickets purchase confirmed', start_date: event.start_date, end_date: event.end_date});
         } else {
             res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Reservation not found or already confirmed' });
         }

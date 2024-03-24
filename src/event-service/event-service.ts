@@ -36,6 +36,8 @@ app.get('/api/event', eventRoute.getAllAvailableEvents); //TODO - CHECK
 // Get All Events
 app.get('/api/event/all', eventRoute.getAllEvents); //TODO - CHECK
 
+app.get('/api/event/ensureSecured', eventRoute.ensureSecuredTickets); //TODO
+
 // Secure Tickets
 app.post('/api/event/secure', eventRoute.secureTickets);  //TODO
 

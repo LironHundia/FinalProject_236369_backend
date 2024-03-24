@@ -12,7 +12,7 @@ export class PublisherChannel {
   }
 
   // Method to send an event/message to a specified exchange
-  async sendEvent(exchange:string, queue:string, msg: string) {
+  async sendEvent(exchange: string, queue: string, msg: string) {
     if (!this.channel) {
       await this.createChannel();
     }

@@ -224,8 +224,7 @@ export async function addComment(req: Request, res: Response)
 
 export async function buyTicket(req: Request, res: Response)
 {
-    const { eventId, ticketType, quantity } = req.body;
-    const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
+    const { userId, eventId, ticketType, quantity } = req.body;
     const orderId = uuidv4();
 
     try 
@@ -233,15 +232,15 @@ export async function buyTicket(req: Request, res: Response)
         // Step 1: Ask the Event Server to secure tickets
         const secureResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/secure`, {
             eventId,
+            userId,
             ticketType,
             quantity,
-            orderId // Implement this function to generate a unique order ID
+            orderId
         });
     
         if (secureResponse.status === constants.STATUS_OK) {
-            const orderId = secureResponse.data.orderId;
-  
             // Step 2: Call the Payment API
+            const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
             const paymentResponse = await axios.post(constants.PAYMENT_API_URL, {
                 cc,
                 holder,
@@ -259,7 +258,9 @@ export async function buyTicket(req: Request, res: Response)
         
                 if (confirmResponse.status === constants.STATUS_OK) {
                     ////////////////////////////////////////////////////////////////
-                    //TODO: Publish new order made!
+                    //Publish new order made!
+                    const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date})
+                    publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
                     ////////////////////////////////////////////////////////////////
                     res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
                 } 
@@ -277,6 +278,66 @@ export async function buyTicket(req: Request, res: Response)
         }
     } catch (error) {
       res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket purchase', error: error.message });
+    }
+}
+
+export async function retryBuyTicket(req: Request, res: Response)
+{
+    const { userId, eventId, orderId, ticketType, quantity } = req.body;
+    if(!userId || !eventId || !orderId)
+    {
+        res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Missing parameters' });
+        return;
+    }
+    try 
+    {
+        // Step 1: Ask the Event Server to ensuer this order still exists
+        const secureResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/ensureSecured`, {
+            eventId,
+            userId,
+            orderId
+        });
+    
+        if (secureResponse.status === constants.STATUS_OK) {
+            // Step 2: Call the Payment API
+            const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
+            const paymentResponse = await axios.post(constants.PAYMENT_API_URL, {
+                cc,
+                holder,
+                cvv,
+                exp,
+                charge
+            });
+    
+            if (paymentResponse.status === constants.STATUS_OK) {
+                // Step 3: Confirm the purchase with the Event Server
+                const confirmResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/confirm`, {
+                    eventId,
+                    orderId
+                });
+        
+                if (confirmResponse.status === constants.STATUS_OK) {
+                    ////////////////////////////////////////////////////////////////
+                    //Publish new order made!
+                    const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date})
+                    publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
+                    ////////////////////////////////////////////////////////////////
+                    res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
+                } 
+                else { //confirmation failed
+                    res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Tickets final purchase failed.', orderId });
+                }
+            } 
+            else { //payment failed
+                // Handle payment failure
+                res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Payment failed. Please try again.', orderId });
+            }
+        } 
+        else { //tickets are not secured
+            return res.status(secureResponse.status).json({ message: "tickets are no longer secured! start process again" });
+        }
+    } catch (error) {
+      res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket *retry* purchase', error: error.message });
     }
 }
 
