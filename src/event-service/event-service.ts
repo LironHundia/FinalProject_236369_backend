@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import * as dotenv from "dotenv";
 import * as eventRoute from './event-routes.js';
+import * as constants from '../const.js';
 
 const app = express();
 app.use(bodyParser.json());
@@ -12,7 +13,7 @@ dotenv.config();
 
 let port = process.env.PORT || 3001;
 
-const dbURI = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@finalproject.szjndb6.mongodb.net/EventsBooking?retryWrites=true&w=majority&appName=FinalProject`;
+const dbURI =  constants.MONGODB_URL_LIRON;
 await mongoose.connect(dbURI);
 const db = mongoose.connection;
 

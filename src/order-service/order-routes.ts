@@ -4,21 +4,31 @@ import { set } from 'mongoose';
 import { setLimit, setSkip } from '../utilities.js';
 
 
-export async function addOrder(req: Request, res: Response)  //TODO - Need to move implementation to be with Message Broker (RabbitMQ) - see comment-service for reference
+/*export async function addOrder(req: Request, res: Response)  //TODO - Need to move implementation to be with Message Broker (RabbitMQ) - see comment-service for reference
 {
     try {
         const { userId, eventId, quantity, totalPrice, ticketsType, startDate, endDate } = req.body;
         const newOrder = new Order({ userId, eventId, quantity, totalPrice, ticketsType, startDate, endDate });
         await newOrder.save();
         res.status(201).send(newOrder);
-      } catch (error) {
+    } catch (error) {
         console.error('Error adding order:', error);
         res.status(500).send('Internal server error');
-      }
+    }
+}*/
+
+export async function addNewOrderFromListener(msg: string) {
+    try {
+        const messageContent = JSON.parse(msg);
+        const { userId, eventId, quantity, totalPrice, ticketsType, startDate, endDate } = messageContent;
+        const newOrder = new Order({ userId, eventId, quantity, totalPrice, ticketsType, startDate, endDate });
+        await newOrder.save();
+    } catch (error) {
+        console.error('Error adding order:', error);
+    }
 }
 
-export async function getUserNextEvent(req: Request, res: Response)
-{
+export async function getUserNextEvent(req: Request, res: Response) {
     const userId = req.params.userId;
 
     if (!userId) {
@@ -32,23 +42,22 @@ export async function getUserNextEvent(req: Request, res: Response)
         if (!nextEvent) {
             return res.status(404).json({ message: 'No upcoming events found for this user' });
         }
-        res.status(200).json({ event: { eventId: nextEvent.eventId, startDate: nextEvent.startDate } });    
+        res.status(200).json({ event: { eventId: nextEvent.eventId, startDate: nextEvent.startDate } });
     } catch (error) {
         console.error('Error fetching next event:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 }
 
-export async function getOrdersByUserId(req: Request, res: Response)
-{
+export async function getOrdersByUserId(req: Request, res: Response) {
     const userId = req.params.userId;
     if (!userId) {
         return res.status(400).json({ error: 'UserId is required' });
     }
 
     let limit = setLimit(req.query.limit);
-    let skip = setSkip(req.query.skip); 
-  
+    let skip = setSkip(req.query.skip);
+
     try {
         const orders = await Order.find({ userId: userId }).skip(skip).limit(limit);
         res.status(200).json({ orders: orders });
@@ -58,8 +67,7 @@ export async function getOrdersByUserId(req: Request, res: Response)
     }
 }
 
-export async function deleteAllOrders(req: Request, res: Response)
-{
+export async function deleteAllOrders(req: Request, res: Response) {
     try {
         // Delete all orders using deleteMany method
         const deleteResult = await Order.deleteMany({});

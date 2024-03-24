@@ -2,6 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import * as dotenv from "dotenv";
+import * as constants from '../const.js';
 import {consumeMessages} from './consume-messages.js';
 import * as commentRoute from './comment-routes.js';
 
@@ -14,7 +15,7 @@ dotenv.config();
 const port = process.env.PORT || 3004;
 
 
-const dbURI = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@mycluster.fs213ja.mongodb.net/`;
+const dbURI =  constants.MONGODB_URL_LIRON;
 await mongoose.connect(dbURI);
 const db = mongoose.connection;
 
