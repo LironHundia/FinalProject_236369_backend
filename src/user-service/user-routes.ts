@@ -210,116 +210,92 @@ export async function addComment(req: Request, res: Response) {
     }
 }
 
-export async function buyTicket(req: Request, res: Response) {
+export async function secureTicket(req: Request, res: Response) {
+
     const { userId, eventId, ticketType, quantity } = req.body;
     const orderId = uuidv4();
 
-    try {
-        // Step 1: Ask the Event Server to secure tickets
-        const secureResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/secure`, {
-            eventId,
-            userId,
-            ticketType,
-            quantity,
-            orderId
+    // Step 1: Ask the Event Server to secure tickets
+    const secureResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/secure`, {
+        eventId,
+        userId,
+        ticketType,
+        quantity,
+        orderId
+    });
+
+    if (secureResponse.status === constants.STATUS_OK) {
+        const token = jwt.sign({ orderId: orderId }, process.env.JWT_SECRET, { expiresIn: '2m' });
+        //set the cookie in the response
+        res.cookie('paymentToken', token, {
+            httpOnly: true,
+            secure: false,//TODO: CHANGE BACK TO: true, 
+            sameSite: 'lax', //TODO: CHANGE BACK TO: 'none',
+            maxAge: 2 * 60 * 1000 // 2 minutes in milliseconds
         });
-
-        if (secureResponse.status === constants.STATUS_OK) {
-            // Step 2: Call the Payment API
-            const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
-            const paymentResponse = await axios.post(constants.PAYMENT_API_URL, {
-                cc,
-                holder,
-                cvv,
-                exp,
-                charge
-            });
-
-            if (paymentResponse.status === constants.STATUS_OK) {
-                // Step 3: Confirm the purchase with the Event Server
-                const confirmResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/confirm`, {
-                    eventId,
-                    orderId
-                });
-
-                if (confirmResponse.status === constants.STATUS_OK) {
-                    //Publish new order made!
-                    const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
-                    publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
-                    res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
-                }
-                else { //confirmation failed
-                    res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Tickets final purchase failed.', orderId });
-                }
-            }
-            else { //payment failed
-                // Handle payment failure
-                res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Payment failed. Please try again.', orderId });
-            }
-        }
-        else { //secure tickets failed
-            return res.status(secureResponse.status).json({ message: secureResponse.data.message });
-        }
-    } catch (error) {
-        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket purchase', error: error.message });
-    }
-}
-
-export async function retryBuyTicket(req: Request, res: Response) {
-    const { userId, eventId, orderId, ticketType, quantity } = req.body;
-    if (!userId || !eventId || !orderId) {
-        res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Missing parameters' });
+        res.status(constants.STATUS_OK).json({ message: 'Tickets secured', orderId });
+        //add token
         return;
     }
+    else {
+        res.status(constants.STATUS_BAD_REQUEST).json({ message: secureResponse.data.message });
+    }
+    return;
+}
+
+export async function buyTicket(req: Request, res: Response) {
+    const sessionToken = req.cookies.paymentToken;
+    if (!sessionToken) {
+        res.status(constants.STATUS_UNAUTHORIZED).send('No session order found. Please try again.');
+        return;
+    }
+
+    let orderId;
     try {
-        // Step 1: Ask the Event Server to ensuer this order still exists
-        const secureResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/ensureSecured`, {
-            eventId,
-            userId,
-            orderId
+        const payload = jwt.verify(sessionToken, process.env.JWT_SECRET);
+        orderId = (payload as JwtPayload).orderId;
+    }
+    catch (e) {
+        res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
+        return;
+    }
+
+    const { userId, eventId, ticketType, quantity } = req.body;
+    try {
+        // Step 2: Call the Payment API
+        const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
+        const paymentResponse = await axios.post(constants.PAYMENT_API_URL, {
+            cc,
+            holder,
+            cvv,
+            exp,
+            charge
         });
 
-        if (secureResponse.status === constants.STATUS_OK) {
-            // Step 2: Call the Payment API
-            const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
-            const paymentResponse = await axios.post(constants.PAYMENT_API_URL, {
-                cc,
-                holder,
-                cvv,
-                exp,
-                charge
+        if (paymentResponse.status === constants.STATUS_OK) {
+            // Step 3: Confirm the purchase with the Event Server
+            const confirmResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/confirm`, {
+                eventId,
+                orderId
             });
 
-            if (paymentResponse.status === constants.STATUS_OK) {
-                // Step 3: Confirm the purchase with the Event Server
-                const confirmResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/confirm`, {
-                    eventId,
-                    orderId
-                });
-
-                if (confirmResponse.status === constants.STATUS_OK) {
-                    //Publish new order made!
-                    const msg = JSON.stringify({ userId, eventId, eventName: confirmResponse.data.eventName, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
-                    publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
-                    //Update user with new event
-                    updateUserNewOrder(userId, eventId, confirmResponse.data.eventName, confirmResponse.data.start_date, confirmResponse.data.end_date)
-                    res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
-                }
-                else { //confirmation failed
-                    res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Tickets final purchase failed.', orderId });
-                }
+            if (confirmResponse.status === constants.STATUS_OK) {
+                //Publish new order made!
+                const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
+                publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
+                res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
             }
-            else { //payment failed
-                // Handle payment failure
-                res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Payment failed. Please try again.', orderId });
+            else { //confirmation failed
+                res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Tickets final purchase failed.', orderId });
             }
         }
-        else { //tickets are not secured
-            return res.status(secureResponse.status).json({ message: "tickets are no longer secured! start process again" });
+        else { //payment failed
+            // Handle payment failure
+            res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Payment failed. Please try again.', orderId });
         }
     } catch (error) {
-        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket *retry* purchase', error: error.message });
-    }
+    res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket purchase', error: error.message });
+}
 }
 
 export async function deleteAllUsers(req: Request, res: Response) {
@@ -344,8 +320,7 @@ export const updatUserNextEvent = async (msg) => {
         console.error('User not found in updateNextEvent function');
         return;
     }
-    else if(userToUpdate.next_event.event_start_date > messageContent.start_date)
-    {
+    else if (userToUpdate.next_event.event_start_date > messageContent.start_date) {
         userToUpdate.next_event.event_name = messageContent.eventName;
         userToUpdate.next_event.event_id = messageContent.eventId;
         userToUpdate.next_event.event_start_date = messageContent.start_date;
@@ -355,15 +330,14 @@ export const updatUserNextEvent = async (msg) => {
 }
 
 export const updateUserNewOrder = async (userId, eventId, eventName, start_date, end_date) => {
-    try {    
+    try {
         const userToUpdate: IUser = await User.findById(userId);
         if (!userToUpdate) {
             console.error('User not found in updateNextEvent function');
             return;
         }
         //if this is the first order or the new event is before the current event
-        if(userToUpdate.num_of_orders_made === 0 || userToUpdate.next_event.event_start_date > start_date)
-        {
+        if (userToUpdate.num_of_orders_made === 0 || userToUpdate.next_event.event_start_date > start_date) {
             userToUpdate.next_event.event_name = eventName;
             userToUpdate.next_event.event_id = eventId;
             userToUpdate.next_event.event_start_date = start_date;

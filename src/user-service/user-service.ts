@@ -2,12 +2,14 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import * as dotenv from "dotenv";
+import cookieParser from 'cookie-parser';
 import * as constants from '../const.js';
 import * as userRoute from './user-routes.js';
 import {consumeMessages} from './consume-messages.js';
 
 const app = express();
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 // Connect to MongoDB
 dotenv.config();
@@ -45,7 +47,7 @@ app.get('/api/user', userRoute.getUser);
 app.post('/api/user/buy', userRoute.buyTicket);
 
 // Retry Buy Ticket
-app.post('/api/user/retry', userRoute.retryBuyTicket);
+app.post('/api/user/secure', userRoute.secureTicket);
 
 // Add new comment
 app.post('/api/comment', userRoute.addComment);
