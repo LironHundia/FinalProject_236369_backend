@@ -26,7 +26,7 @@ export const User = mongoose.model<IUser>('User', userSchema);
 export const validateUserComment = (messageBody: any) => {
   // Define the event schema
   const eventJoiSchema = Joi.object({
-      event_id: Joi.string().required(),
+      eventId: Joi.string().required(),
       username: Joi.string().required(),
       comment: Joi.string().required(),
   });

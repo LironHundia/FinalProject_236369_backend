@@ -66,8 +66,10 @@ export async function add(req: Request, res: Response)
 export const AddComment = async (msg) => {
     try {
       const messageContent = JSON.parse(msg);
-      const { eventId, text } = messageContent;
-      const newComment = new Comment({ eventId, text });
+      const eventId = messageContent.eventId;
+      const comment = messageContent.comment;
+      const username = messageContent.username;
+      const newComment = new Comment({ eventId, author:username, comment });
       await newComment.save();
     } catch (error) {
       console.error('Error adding comment:', error);

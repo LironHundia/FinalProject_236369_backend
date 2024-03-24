@@ -8,6 +8,8 @@ import { validateEventDates, validateDateUpdate} from '../utilities.js';
 const publisherChannel = new PublisherChannel();
 
 export async function addNewEvent(req: Request, res: Response) {
+    console.log("Event server got request");
+
     try {
         // Validate the request body using the validateEvent function
         const { error } = validateEvent(req.body);
@@ -27,7 +29,7 @@ export async function addNewEvent(req: Request, res: Response) {
         res.status(constants.STATUS_CREATED).send({ _id: newEvent.id });
         return;
     } catch (error) {
-        console.error('Error adding event:', error);
+                console.error('Error adding event:', error);
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
         return;
     }
@@ -101,7 +103,7 @@ export async function updateEvent(req: Request, res: Response) {
 
 export async function getEventById(req: Request, res: Response) {
     try {
-        const eventId = req.params.eventId;
+                const eventId = req.params.eventId;
         // Check if eventId is a valid ObjectId
         if (!mongoose.Types.ObjectId.isValid(eventId)) {
             res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - eventId is not a valid ObjectId');
@@ -257,11 +259,14 @@ export async function secureTickets(req: Request, res: Response)
             }, 2 * 60000); // 2 minutes
 
             res.status(constants.STATUS_OK).json({ message: 'Tickets secured', orderId });
+            return;
         } else {
             res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Not enough tickets available' });
+            return;
         }
     } catch (error) {
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error securing tickets', error });
+        return;
     }
 }
 

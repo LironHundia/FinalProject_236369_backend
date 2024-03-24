@@ -19,7 +19,6 @@ export async function login(req: Request, res: Response) {
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
         return;
     }
-
     let user;
 
     try {
