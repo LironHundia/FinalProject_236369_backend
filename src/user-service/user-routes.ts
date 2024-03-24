@@ -37,14 +37,15 @@ export async function login(req: Request, res: Response) {
 
     const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '2d' })
 
-    const secure = process.env.NODE_ENV === 'production';
-    res.cookie('token', token, { httpOnly: true, secure: secure, sameSite: 'none' });
+    //TODO: CHANGE BACK TO: secure: true, sameSite: 'none'
+    res.cookie('userToken', token, { httpOnly: true, secure: false, sameSite: 'lax' });
     res.status(constants.STATUS_OK).send('Logged in');
 }
 
 export async function logout(req: Request, res: Response) {
-    const secure = process.env.NODE_ENV === 'production';
-    res.clearCookie('token', { httpOnly: true, secure: secure, sameSite: 'none' });
+    //TODO: CHANGE BACK TO: secure: true, sameSite: 'none'
+    res.clearCookie('userToken', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });  
+    res.status(200).send('Logged out');
 }
 
 export async function signup(req: Request, res: Response) {
