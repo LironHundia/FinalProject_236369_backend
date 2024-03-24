@@ -257,11 +257,9 @@ export async function buyTicket(req: Request, res: Response)
                 });
         
                 if (confirmResponse.status === constants.STATUS_OK) {
-                    ////////////////////////////////////////////////////////////////
                     //Publish new order made!
                     const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date})
                     publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
-                    ////////////////////////////////////////////////////////////////
                     res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
                 } 
                 else { //confirmation failed
@@ -317,11 +315,9 @@ export async function retryBuyTicket(req: Request, res: Response)
                 });
         
                 if (confirmResponse.status === constants.STATUS_OK) {
-                    ////////////////////////////////////////////////////////////////
                     //Publish new order made!
                     const msg = JSON.stringify({ userId, eventId, quantity, ticketType, totalPrice: charge, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date})
                     publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
-                    ////////////////////////////////////////////////////////////////
                     res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
                 } 
                 else { //confirmation failed
@@ -352,3 +348,8 @@ export async function deleteAllUsers(req: Request, res: Response)
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ error: 'Internal server error' });
     }
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// helper functions
+////////////////////////////////////////////////////////////////////////////////////////
