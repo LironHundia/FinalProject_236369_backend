@@ -6,7 +6,12 @@ const orderSchema = new mongoose.Schema({
     orderId: { type: String, default: uuidv4() },
     userId: String,
     eventId: String,
-    tickets: Number,
+    quantity: Number,
+    totalPrice: Number,
+    ticketsType: String,
+    startDate: Date,
+    endDate: Date,
+    purchaseDate: { type: Date, default: Date.now },
   });
   
   export const Order = mongoose.model('Order', orderSchema);
