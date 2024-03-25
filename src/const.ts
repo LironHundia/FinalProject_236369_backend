@@ -36,7 +36,7 @@ export const DEFAULT_SKIP = 0;
 export const DEFAULT_PAGE = 1;
 
 //Permission levels
-export const BASIC_LEVEL = "B";
+export const WORKER_LEVEL = "W";
 export const MANAGER_LEVEL = "M";
 export const ADMIN_LEVEL = "A";
 

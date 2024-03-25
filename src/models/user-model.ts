@@ -1,10 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import * as constants from '../const.js';
 import Joi from 'joi';  
 
 enum Permission {
   Admin = "A",
   Manager = "M",
-  Basice = "B",
+  Worker = "W",
 }
 
 // Define the event schema

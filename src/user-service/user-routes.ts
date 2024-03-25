@@ -71,7 +71,7 @@ export async function signup(req: Request, res: Response) {
     const encryptPassword = await bcrypt.hash(credentials.password, 10);
     try {
         const newUser: IUser = new User({
-            username: credentials.username, password: encryptPassword, permission: "B", num_of_oderes_made: 0,
+            username: credentials.username, password: encryptPassword, permission: constants.WORKER_LEVEL, num_of_oderes_made: 0,
             next_event: { event_name: '', event_id: 0, event_start_date: '', event_end_date: '' }
         });
         await newUser.save();

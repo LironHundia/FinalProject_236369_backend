@@ -6,9 +6,14 @@ export class PublisherChannel {
 
   // Method to create a channel on the RabbitMQ connection
   async createChannel() {
+    try{
     const connection = await amqp.connect(constants.RABBITMQ_URL);
     // Create a channel on this connection
     this.channel = await connection.createChannel();
+    }
+    catch(err){
+      console.log("error in connection to RABBITMQ", err);
+    }
   }
 
   // Method to send an event/message to a specified exchange
