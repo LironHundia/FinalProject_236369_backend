@@ -26,10 +26,7 @@ db.once('open', () => {
 app.post('/api/event', eventRoute.addNewEvent);
 
 // Update Event
-app.put('/api/event/:eventId', eventRoute.updateEvent); 
-
-// Get Single Event with comments array
-app.get('/api/event/:eventId', eventRoute.getEventById);
+app.put('/api/event/:eventId?', eventRoute.updateEvent); 
 
 // Get All Events with Available Tickets
 app.get('/api/event', eventRoute.getAllAvailableEvents); //TODO - CHECK
@@ -37,7 +34,8 @@ app.get('/api/event', eventRoute.getAllAvailableEvents); //TODO - CHECK
 // Get All Events
 app.get('/api/event/all', eventRoute.getAllEvents); //TODO - CHECK
 
-app.get('/api/event/ensureSecured', eventRoute.ensureSecuredTickets); //TODO
+// Get Single Event with comments array
+app.get('/api/event/:eventId', eventRoute.getEventById);
 
 // Secure Tickets
 app.post('/api/event/secure', eventRoute.secureTickets);  //TODO

@@ -1,6 +1,23 @@
 import Joi from 'joi';
 import { User, IUser } from './models/user-model.js';
 import * as constants from './const.js';
+import bcrypt from 'bcrypt';
+
+export const signupAdmin = async() => {
+    const username = "admin";
+    const password = await bcrypt.hash("admin", 10);
+    const permission = constants.ADMIN_LEVEL;
+
+    try {
+        const user = await User.findOne({ username: username });
+        if (!user) {
+            const newUser: IUser = new User({ username, password, permission });
+            await newUser.save();
+        }
+    } catch (err) {
+        console.log("External server error trying to signin admin.");
+    }
+};
 
 //checks that date format is OK
 export function validateEventDates(start_date: any, end_date: string): boolean {

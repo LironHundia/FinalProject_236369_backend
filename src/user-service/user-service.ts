@@ -5,10 +5,12 @@ import * as dotenv from "dotenv";
 import cookieParser from 'cookie-parser';
 import * as constants from '../const.js';
 import * as userRoute from './user-routes.js';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import {checkPermissionProxyMiddleware} from '../middleware.js';
+import {signupAdmin} from '../utilities.js';
 
 const app = express();
+app.use(bodyParser.json());
 app.use(cookieParser());
 
 // Connect to MongoDB
@@ -29,35 +31,34 @@ db.once('open', () => {
 // Proxy middleware for /api/event/* routes
 const eventProxy = createProxyMiddleware({
   target: 'http://localhost:3001',
-  changeOrigin: true
+  changeOrigin: true,
+  onProxyReq: fixRequestBody
 });
 
 // Proxy middleware for /api/comment/* routes
 const commentProxy = createProxyMiddleware({
   target: 'http://localhost:3004',
-  changeOrigin: true
+  changeOrigin: true,
+  onProxyReq: fixRequestBody
 });
 
 // Proxy middleware for /api/order/* routes
 const orderProxy = createProxyMiddleware({
   target: 'http://localhost:3003',
-  changeOrigin: true
+  changeOrigin: true,
+  onProxyReq: fixRequestBody
 });
 
 // Apply proxy middleware for specific routes
 app.put('/api/event/:eventId',checkPermissionProxyMiddleware(constants.MANAGER_LEVEL), eventProxy);
-app.get('/api/event/:eventId',checkPermissionProxyMiddleware(constants.BASIC_LEVEL), eventProxy);
-app.get('/api/event',checkPermissionProxyMiddleware(constants.BASIC_LEVEL), eventProxy);
+app.get('/api/event',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), eventProxy);
 app.get('/api/event/all',checkPermissionProxyMiddleware(constants.MANAGER_LEVEL), eventProxy);
+app.get('/api/event/:eventId?',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), eventProxy);
 app.post('/api/event',checkPermissionProxyMiddleware(constants.MANAGER_LEVEL),  eventProxy);
-app.get('/api/comment/backoffice/:eventId?', checkPermissionProxyMiddleware(constants.MANAGER_LEVEL), commentProxy);
-app.get('/api/comment/:eventId?', checkPermissionProxyMiddleware(constants.BASIC_LEVEL), commentProxy);
-app.get('/api/order/nextEvent/:userId?',checkPermissionProxyMiddleware(constants.BASIC_LEVEL), orderProxy);
-app.get('/api/order/:userId?',checkPermissionProxyMiddleware(constants.BASIC_LEVEL), orderProxy);
-
-/////////////////////////////////////////////////////
-app.use(bodyParser.json());
-/////////////////////////////////////////////////////
+app.get('/api/comment/backoffice/:eventId', checkPermissionProxyMiddleware(constants.MANAGER_LEVEL), commentProxy);
+app.get('/api/comment/:eventId', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), commentProxy);
+app.get('/api/order/nextEvent/:userId?',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), orderProxy);
+app.get('/api/order/:userId?',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), orderProxy);
 
 // Signup
 app.post('/api/signup', userRoute.signup);
@@ -72,23 +73,21 @@ app.post('/api/logout', userRoute.logout);
 app.get('/api/username', userRoute.getUsername);
 
 // Update permissions (by username in the body)
-app.put('/api/permission',checkPermissionProxyMiddleware(constants.ADMIN_LEVEL), userRoute.updatePermissions);
-
-// Get User (by username in the token) 
-app.get('/api/user', userRoute.getUser);
+app.put('/api/permission', userRoute.updatePermissions);
 
 // Buy Ticket
-app.post('/api/user/buy', userRoute.buyTicket);
+app.post('/api/user/buy', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), userRoute.buyTicket);
 
 // Retry Buy Ticket
-app.post('/api/user/secure', userRoute.secureTicket);
+app.post('/api/user/secure', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), userRoute.secureTicket);
 
 // Add new comment
-app.post('/api/comment', userRoute.addComment);
+app.post('/api/comment', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), userRoute.addComment);
 
 // Delete all Users - for debugging
 app.delete('/api/user/empty', userRoute.deleteAllUsers);
 
+signupAdmin();
 
 app.listen(port, () => {
   console.log(`User Server running on port ${port}`);
