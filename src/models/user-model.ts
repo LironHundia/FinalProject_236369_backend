@@ -3,9 +3,9 @@ import * as constants from '../const.js';
 import Joi from 'joi';  
 
 enum Permission {
-  Admin = "A",
-  Manager = "M",
-  Worker = "W",
+  Admin = constants.ADMIN_LEVEL,
+  Manager = constants.MANAGER_LEVEL,
+  Worker = constants.WORKER_LEVEL,
 }
 
 // Define the event schema

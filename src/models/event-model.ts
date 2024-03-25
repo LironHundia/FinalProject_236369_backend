@@ -23,7 +23,7 @@ const ticketsCategoriesSchema = new Schema({
 // Define the reservation schema
  const reservationSchema = new mongoose.Schema({
     orderId: String,
-    userId: String,
+    username: String,
     ticketType: String,
     quantity: Number,
     expiresAt: Date,
@@ -67,7 +67,7 @@ export interface IEvent extends Document {
         available_quantity: number;
     }>;
     reservations: Array<{
-        userId: string;
+        username: string;
         orderId: string;
         ticketType: string;
         quantity: number;

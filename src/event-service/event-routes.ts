@@ -91,7 +91,7 @@ export async function updateEvent(req: Request, res: Response) {
 
     //create update event for User and Order services by message broker
     try {
-        await publisherChannel.sendEvent(constants.EVENT_UPDATE_EXCHANGE, constants.EVENT_UPDATE_QUEUE, JSON.stringify({ _id: updatedEvent._id, end_date: updatedEvent.end_date }));
+        await publisherChannel.sendEvent(constants.EVENT_UPDATE_EXCHANGE, constants.EVENT_UPDATE_QUEUE, JSON.stringify({ eventId: updatedEvent._id, start_date: updatedEvent.start_date, end_date: updatedEvent.end_date }));
         res.status(constants.STATUS_OK).send({ _id: updatedEvent._id });
         return;
     } catch (error) {
@@ -184,26 +184,10 @@ export async function getAllEvents(req: Request, res: Response) {
     }
 }
 
-export async function ensureSecuredTickets(req: Request, res: Response) 
-{
-    const { eventId, userId, orderId } = req.body;
-    const event = await Event.findById(eventId);
-    const reservation = event.reservations.find(res => {res.orderId === orderId, res.userId === userId});
-    if(reservation)
-    {
-        res.status(constants.STATUS_OK).json({ message: 'Reservation already exists' });
-        return;
-    }
-    else
-    {
-        res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Reservation not found or out of date' });
-        return;
-    }
-}
-
 export async function secureTickets(req: Request, res: Response) 
 {
-    const { eventId, userId, ticketType, quantity, orderId } = req.body;
+    const { eventId, username, ticketType, quantity, orderId } = req.body;
+    const quantity_value = parseInt(quantity);
 
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
         res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - eventId is not a valid ObjectId');
@@ -212,19 +196,25 @@ export async function secureTickets(req: Request, res: Response)
 
     try {
         const event = await Event.findById(eventId);
+        if (!event) {
+            res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - event not found');
+            return;
+        }
         const ticketCategory = event.tickets.find(ticket => ticket.type === ticketType);
 
-        if (ticketCategory && ticketCategory.available_quantity >= quantity) {
+        if (ticketCategory && ticketCategory.available_quantity >= quantity_value) {
             // Reduce the available quantity to secure the tickets - TODO: Ensure this is done atomically
-            ticketCategory.available_quantity -= quantity;
-            event.total_available_tickets -= quantity;
+            ticketCategory.available_quantity -= quantity_value;
+            const username = ''; // Declare or initialize the 'username' variable
+
+            event.total_available_tickets -= quantity_value;
 
             // Add a temporary reservation with orderId and expiry time
             event.reservations.push({
                 orderId,
-                userId,
+                username,
                 ticketType,
-                quantity,
+                quantity: quantity_value,
                 expiresAt: new Date(Date.now() + 2 * 60000), // 2 minutes from now
                 confirmed: false
             });
@@ -242,8 +232,8 @@ export async function secureTickets(req: Request, res: Response)
                     {
                         // Release the tickets
                         const ticketToUpdate = eventToUpdate.tickets.find(ticket => ticket.type === ticketType);
-                        ticketToUpdate.available_quantity += quantity;
-                        event.total_available_tickets += quantity;
+                        ticketToUpdate.available_quantity += quantity_value;
+                        eventToUpdate.total_available_tickets += quantity_value;
                         eventToUpdate.reservations = eventToUpdate.reservations.filter(res => res.orderId !== orderId);
                         await eventToUpdate.save();
                     }
@@ -261,7 +251,7 @@ export async function secureTickets(req: Request, res: Response)
             res.status(constants.STATUS_OK).json({ message: 'Tickets secured', orderId });
             return;
         } else {
-            res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Not enough tickets available' });
+            res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Bad order: Not enough tickets available in this category' });
             return;
         }
     } catch (error) {
@@ -285,11 +275,14 @@ export async function buyTickets(req: Request, res: Response)
             await event.save();
 
             res.status(constants.STATUS_OK).json({ message: 'Tickets purchase confirmed', event_name: event.name ,start_date: event.start_date, end_date: event.end_date});
+            return;
         } else {
-            res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Reservation not found or already confirmed' });
+            res.status(constants.STATUS_BAD_REQUEST).send('Reservation not found or already confirmed');
+            return;
         }
     } catch (error) {
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error confirming ticket purchase', error });
+        return;
     }
 }
 

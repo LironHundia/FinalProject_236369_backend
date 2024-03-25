@@ -7,6 +7,7 @@ import { User, IUser, validateUserComment, validateUserCredentials, validatePerm
 import { isAutherizedClient } from '../utilities.js';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { assert } from 'console';
 
 
 const publisherChannel = new PublisherChannel();
@@ -15,7 +16,6 @@ export async function login(req: Request, res: Response) {
     const credentials = req.body;
     const { error } = validateUserCredentials(credentials);
     if (error) {
-        console.error('Error validating user credentials:', error);
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
         return;
     }
@@ -30,7 +30,7 @@ export async function login(req: Request, res: Response) {
     }
 
     if (!user || !await bcrypt.compare(credentials.password, user.password)) {
-        res.status(constants.STATUS_UNAUTHORIZED).send('Invalid credentials');
+        res.status(constants.STATUS_UNAUTHORIZED).send('Invalid username or password');
         return;
     }
 
@@ -43,7 +43,7 @@ export async function login(req: Request, res: Response) {
 
 export async function logout(req: Request, res: Response) {
     //TODO: CHANGE BACK TO: secure: true, sameSite: 'none'
-    res.clearCookie('userToken', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });  
+    res.clearCookie('userToken', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
     res.status(200).send('Logged out');
 }
 
@@ -52,7 +52,6 @@ export async function signup(req: Request, res: Response) {
     const credentials = req.body;
     const { error } = validateUserCredentials(credentials);
     if (error) {
-        console.error('Error validating user credentials:', error);
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
         return;
     }
@@ -70,10 +69,7 @@ export async function signup(req: Request, res: Response) {
     // Create new user
     const encryptPassword = await bcrypt.hash(credentials.password, 10);
     try {
-        const newUser: IUser = new User({
-            username: credentials.username, password: encryptPassword, permission: constants.WORKER_LEVEL, num_of_oderes_made: 0,
-            next_event: { event_name: '', event_id: 0, event_start_date: '', event_end_date: '' }
-        });
+        const newUser: IUser = new User({username: credentials.username, password: encryptPassword, permission: constants.WORKER_LEVEL});
         await newUser.save();
     }
     catch (error) {
@@ -86,7 +82,7 @@ export async function signup(req: Request, res: Response) {
 }
 
 export async function getUsername(req: Request, res: Response) {
-    const token = req.cookies.token;
+    const token = req.cookies.userToken;
     if (!token) {
         res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
         return;
@@ -107,7 +103,7 @@ export async function getUsername(req: Request, res: Response) {
 
 export async function updatePermissions(req: Request, res: Response) {
     // check if the user logged in
-    const token = req.cookies.token;
+    const token = req.cookies.userToken;
     if (!token) {
         res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
         return;
@@ -121,9 +117,9 @@ export async function updatePermissions(req: Request, res: Response) {
             res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
             return;
         }
-        const isAutherized = await isAutherizedClient(username, "A");
+        const isAutherized = await isAutherizedClient(username, constants.ADMIN_LEVEL);
         if (!isAutherized) {
-            res.status(constants.STATUS_FORBIDDEN).send('Not authorized');
+            res.status(constants.STATUS_FORBIDDEN).send('Not authorized - only admin can update permissions');
             return;
         }
     } catch (e) {
@@ -136,55 +132,23 @@ export async function updatePermissions(req: Request, res: Response) {
         res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - username and permission are required');
         return;
     }
+    if (req.body.permission !== constants.MANAGER_LEVEL && req.body.permission !== constants.WORKER_LEVEL) {
+        res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - permission can only be changed to "M" or "W"');
+        return;
+    }
     // Update the user's permissions
     try {
-        await User.updateOne({ username: username }, { permission: req.body.permissions });
-        res.status(constants.STATUS_OK).send('Permissions updated successfully');
-        return;
-    } catch (error) {
-        console.error('Error updating permissions:', error);
-        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
-        return;
-    }
-}
-
-export async function getUser(req: Request, res: Response) {
-    // check if the user logged in
-    const token = req.cookies.token;
-    if (!token) {
-        res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
-        return;
-    }
-    // check if the user has the permission to update permissions
-    let username: string | null;
-    try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET);
-        if (!payload) {
-            res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
-            return;
-        }
-        username = (payload as JwtPayload).username;
-        const isAutherized = await isAutherizedClient(username, constants.ADMIN_LEVEL);
-        if (!isAutherized) {
-            res.status(constants.STATUS_FORBIDDEN).send('Not authorized');
-            return;
-        }
-    } catch (e) {
-        res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
-        return;
-    }
-
-    // Get the user
-    try {
-        const user = await User.findOne({ username: username });
+        const user = await User.findOne({ username: req.body.username });
         if (!user) {
             res.status(constants.STATUS_NOT_FOUND).send('User not found');
             return;
         }
-        res.status(constants.STATUS_OK).send(user);
-        return;
+        user.permission = req.body.permission;
+        user.save();
+
+        res.status(constants.STATUS_OK).send('Permissions updated successfully');
     } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error('Error updating permissions:', error);
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
         return;
     }
@@ -212,34 +176,40 @@ export async function addComment(req: Request, res: Response) {
 
 export async function secureTicket(req: Request, res: Response) {
 
-    const { userId, eventId, ticketType, quantity } = req.body;
+    const { username, eventId, ticketType, quantity } = req.body;
     const orderId = uuidv4();
-
-    // Step 1: Ask the Event Server to secure tickets
-    const secureResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/secure`, {
-        eventId,
-        userId,
-        ticketType,
-        quantity,
-        orderId
-    });
-
-    if (secureResponse.status === constants.STATUS_OK) {
-        const token = jwt.sign({ orderId: orderId }, process.env.JWT_SECRET, { expiresIn: '2m' });
-        //set the cookie in the response
-        res.cookie('paymentToken', token, {
-            httpOnly: true,
-            secure: false,//TODO: CHANGE BACK TO: true, 
-            sameSite: 'lax', //TODO: CHANGE BACK TO: 'none',
-            maxAge: 2 * 60 * 1000 // 2 minutes in milliseconds
+    let secureResponse;
+    try {
+        // Step 1: Ask the Event Server to secure tickets
+        secureResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/secure`, {
+            eventId,
+            username,
+            ticketType,
+            quantity,
+            orderId
         });
-        res.status(constants.STATUS_OK).json({ message: 'Tickets secured', orderId });
-        //add token
+
+    } catch (error) {
+        if(error.response) {
+            res.status(error.response.status).send(error.response.data);
+        }
+        else {
+            res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error in securing tickets');
+        }
         return;
     }
-    else {
-        res.status(constants.STATUS_BAD_REQUEST).json({ message: secureResponse.data.message });
-    }
+
+    assert(secureResponse.status === constants.STATUS_OK, 'Error securing tickets');
+    const token = jwt.sign({ orderId: orderId }, process.env.JWT_SECRET, { expiresIn: '2m' });
+    //set the cookie in the response
+    res.cookie('paymentToken', token, {
+        httpOnly: true,
+        secure: false,//TODO: CHANGE BACK TO: true, 
+        sameSite: 'lax', //TODO: CHANGE BACK TO: 'none',
+        maxAge: 2 * 60 * 1000 // 2 minutes in milliseconds
+    });
+    res.status(constants.STATUS_OK).json({ message: 'Tickets secured', orderId });
+    //add token
     return;
 }
 
@@ -256,46 +226,58 @@ export async function buyTicket(req: Request, res: Response) {
         orderId = (payload as JwtPayload).orderId;
     }
     catch (e) {
-        res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
+        res.status(constants.STATUS_UNAUTHORIZED).send('Invalid payment token');
         return;
     }
 
-    const { userId, eventId, ticketType, quantity } = req.body;
+    const { username, eventId, ticketType, quantity } = req.body;
+    const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
+
+     // Step 2: Call the Payment API
+    let paymentResponse;
     try {
-        // Step 2: Call the Payment API
-        const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
-        const paymentResponse = await axios.post(constants.PAYMENT_API_URL, {
+        paymentResponse = await axios.post(constants.PAYMENT_API_URL, {
             cc,
             holder,
             cvv,
             exp,
             charge
         });
-
-        if (paymentResponse.status === constants.STATUS_OK) {
-            // Step 3: Confirm the purchase with the Event Server
-            const confirmResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/confirm`, {
-                eventId,
-                orderId
-            });
-
-            if (confirmResponse.status === constants.STATUS_OK) {
-                //Publish new order made!
-                const msg = JSON.stringify({ userId, eventId, quantity, totalPrice: charge, ticketType, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
-                publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
-                res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
-            }
-            else { //confirmation failed
-                res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Tickets final purchase failed.', orderId });
-            }
-        }
-        else { //payment failed
-            // Handle payment failure
-            res.status(constants.STATUS_BAD_REQUEST).json({ message: 'Payment failed. Please try again.', orderId });
-        }
     } catch (error) {
-    res.status(constants.STATUS_INTERNAL_SERVER_ERROR).json({ message: 'Error processing ticket purchase', error: error.message });
-}
+        if(error.response) {
+            res.status(error.response.status).send(error.response.data);
+        }
+        else {
+            res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error in Payment API');
+        }
+        return;
+    }
+    assert(paymentResponse.status === constants.STATUS_OK, 'Error processing payment');
+
+    // Step 3: Confirm the purchase with the Event Server
+    let confirmResponse;
+    try {
+        confirmResponse = await axios.post(`${constants.EVENT_SERVER_URL}/api/event/confirm`, {
+            eventId,
+            orderId
+        });
+    } catch (error) {
+        if(error.response) {
+            res.status(error.response.status).send(error.response.data);
+        }
+        else {
+            res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error in Payment API');
+        }
+        return;
+    }
+
+    assert(confirmResponse.status === constants.STATUS_OK, 'Error confirming purchase');
+    //Publish new order made!
+    const msg = JSON.stringify({ username, eventId, quantity, totalPrice: charge, ticketType, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
+    publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
+    res.clearCookie('paymentToken', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' }); //TODO: CHANGE BACK TO: true, 
+    res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
+    return;
 }
 
 export async function deleteAllUsers(req: Request, res: Response) {
