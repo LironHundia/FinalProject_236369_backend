@@ -4,24 +4,24 @@ import { set } from 'mongoose';
 import { setLimit, setSkip } from '../utilities.js';
 
 
-/*export async function addOrder(req: Request, res: Response)  //TODO - Need to move implementation to be with Message Broker (RabbitMQ) - see comment-service for reference
+
+export async function updateOrder(msg: string)
 {
     try {
-        const { userId, eventId, quantity, totalPrice, ticketsType, startDate, endDate } = req.body;
-        const newOrder = new Order({ userId, eventId, quantity, totalPrice, ticketsType, startDate, endDate });
-        await newOrder.save();
-        res.status(201).send(newOrder);
+        const messageContent = JSON.parse(msg);
+        const { eventId, start_date, end_date } = messageContent;
+        await Order.updateMany({ eventId: eventId }, { start_date: start_date, end_date: end_date });
+        return;
     } catch (error) {
-        console.error('Error adding order:', error);
-        res.status(500).send('Internal server error');
+        console.error('Error updating order:', error);
     }
-}*/
+}
 
 export async function addNewOrderFromListener(msg: string) {
     try {
         const messageContent = JSON.parse(msg);
-        const { userId, eventId, quantity, totalPrice, ticketType, start_date, end_date } = messageContent;
-        const newOrder = new Order({ userId, eventId, quantity, totalPrice, ticketsType: ticketType, startDate:start_date, endDate:end_date });
+        const { username, eventId, quantity, totalPrice, ticketType, start_date, end_date } = messageContent;
+        const newOrder = new Order({ username, eventId, quantity, totalPrice, ticketsType: ticketType, start_date:start_date, end_date:end_date });
         await newOrder.save();
     } catch (error) {
         console.error('Error adding order:', error);
@@ -29,20 +29,20 @@ export async function addNewOrderFromListener(msg: string) {
 }
 
 export async function getUserNextEvent(req: Request, res: Response) {
-    const userId = req.params.userId;
+    const username = req.params.username;
 
-    if (!userId) {
-        return res.status(400).json({ error: 'UserId is required' });
+    if (!username) {
+        return res.status(400).json({ error: 'username is required' });
     }
     try {
         const nextEvent = await Order
-            .findOne({ userId: userId, startDate: { $gte: new Date() } })
-            .sort({ startDate: 1 });
+            .findOne({ username: username, start_date: { $gte: new Date() } })
+            .sort({ start_date: 1 });
 
         if (!nextEvent) {
             return res.status(404).json({ message: 'No upcoming events found for this user' });
         }
-        res.status(200).json({ event: { eventId: nextEvent.eventId, startDate: nextEvent.startDate } });
+        res.status(200).json({ event: { eventId: nextEvent.eventId, start_date: nextEvent.start_date } });
     } catch (error) {
         console.error('Error fetching next event:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -50,16 +50,16 @@ export async function getUserNextEvent(req: Request, res: Response) {
 }
 
 export async function getOrdersByUserId(req: Request, res: Response) {
-    const userId = req.params.userId;
-    if (!userId) {
-        return res.status(400).json({ error: 'UserId is required' });
+    const username = req.params.username;
+    if (!username) {
+        return res.status(400).json({ error: 'username is required' });
     }
 
     let limit = setLimit(req.query.limit);
     let skip = setSkip(req.query.skip);
 
     try {
-        const orders = await Order.find({ userId: userId }).skip(skip).limit(limit);
+        const orders = await Order.find({ username: username }).skip(skip).limit(limit);
         res.status(200).json({ orders: orders });
     } catch (error) {
         console.error('Error fetching orders:', error);

@@ -25,17 +25,11 @@ db.once('open', () => {
   console.log('Connected to MongoDB');
 });
 
-// Add Order
-//app.post('/api/orders', orderRoute.addOrder); //TODO - Need to move implementation to be with Message Broker (RabbitMQ) - see comment-service for reference
-
-// Update Order date
- //TODO - Need to implement with Message Broker (RabbitMQ) - see comment-service for reference
-
 // Get next event by user ID
-app.get('/api/order/nextEvent/:userId?', orderRoute.getUserNextEvent); 
+app.get('/api/order/nextEvent/:username?', orderRoute.getUserNextEvent); 
 
 // Get all Orders by user ID
-app.get('/api/order/:userId?', orderRoute.getOrdersByUserId); 
+app.get('/api/order/:username?', orderRoute.getOrdersByUserId); 
 
 // Delete All Orders - for debugging
 app.delete('/api/order/empty', orderRoute.deleteAllOrders);
