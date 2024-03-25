@@ -33,7 +33,10 @@ export const checkPermissionProxyMiddleware = (permissionLevel) => {
     }
 
     // User is valid, add username to the request object
-    req.body.username = username;
+    // Ensure req.body is an object before modifying it
+    if (req.body && typeof req.body === 'object') {
+      req.body.username = username;
+    }
 
     // User is valid, continue with the route handling
     next();
