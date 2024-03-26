@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import * as dotenv from "dotenv";
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import * as constants from '../const.js';
 import * as userRoute from './user-routes.js';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
@@ -12,7 +13,10 @@ import {signupAdmin} from '../utilities.js';
 const app = express();
 app.use(bodyParser.json());
 app.use(cookieParser());
-
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  credentials: true, 
+}));
 // Connect to MongoDB
 dotenv.config();
 
@@ -92,3 +96,4 @@ signupAdmin();
 app.listen(port, () => {
   console.log(`User Server running on port ${port}`);
 });
+
