@@ -37,13 +37,15 @@ export async function login(req: Request, res: Response) {
     const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '2d' })
 
     //TODO: CHANGE BACK TO: secure: true, sameSite: 'none'
-    res.cookie('userToken', token, { httpOnly: true, secure: false, sameSite: 'lax' });
+    //res.cookie('userToken', token, { httpOnly: true, secure: false, sameSite: 'lax' });
+    res.cookie('userToken', token, { httpOnly: true, secure: true, sameSite: 'none' });
     res.status(constants.STATUS_OK).send('Logged in');
 }
 
 export async function logout(req: Request, res: Response) {
     //TODO: CHANGE BACK TO: secure: true, sameSite: 'none'
-    res.clearCookie('userToken', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    //res.clearCookie('userToken', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' });
+    res.clearCookie('userToken', { httpOnly: true, secure: true, sameSite: 'none', path: '/' });
     res.status(200).send('Logged out');
 }
 
@@ -204,8 +206,8 @@ export async function secureTicket(req: Request, res: Response) {
     //set the cookie in the response
     res.cookie('paymentToken', token, {
         httpOnly: true,
-        secure: false,//TODO: CHANGE BACK TO: true, 
-        sameSite: 'lax', //TODO: CHANGE BACK TO: 'none',
+        secure: true,//TODO: CHANGE BACK TO: true, 
+        sameSite: 'none', //TODO: CHANGE BACK TO: 'none',
         maxAge: 2 * 60 * 1000 // 2 minutes in milliseconds
     });
     res.status(constants.STATUS_OK).json({ message: 'Tickets secured', orderId });
