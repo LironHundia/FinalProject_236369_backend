@@ -25,7 +25,7 @@ db.once('open', () => {
 });
 
 // Get Comments count by Event ID
-app.get('/api/comment/backoffice/:eventId?', commentRoute.getCommentsCountByEventId);
+app.get('/api/comment/count/:eventId?', commentRoute.getCommentsCountByEventId);
 
 // Get Comments array by Event ID
 app.get('/api/comment/:eventId?', commentRoute.getCommentsArrayByEventId);

@@ -38,24 +38,3 @@ export const WORKER_LEVEL = "W";
 export const MANAGER_LEVEL = "M";
 export const ADMIN_LEVEL = "A";
 
-//Event URLS
-export const EVENT_API_BASE_URL = "/api/event/:id";
-export const GET_EVENT_BO = "/api/event/backoffice/:id";
-export const GET_AVAILABLE_EVENTS = "/api/event";
-export const CREATE_NEW_EVENT = "/api/event";
-export const UPDATE_EVENT = "/api/event/:id";
-export const BUY_TICKET_EVENT = "/api/event/buy/:id";
-export const SAVE_TICKET = "/api/event/save/:id";
-
-//User URLS
-export const GET_USER = "/api/user/:id";
-export const POST_COMMMENT = "/api/user/comment";
-export const BUY_TICKET_USER = "/api/user/buy";
-
-//Comment URLS
-export const GET_COMMENT_COUNT = "/api/comment/count/:event_id";
-export const GET_COMMENT = "/api/comment/:event_id";
-
-//Order URLS
-export const GET_ORDER = "/api/order/:user_id";
-export const GET_NEXT_EVENT = "/api/order/nextEvent/:user_id";
