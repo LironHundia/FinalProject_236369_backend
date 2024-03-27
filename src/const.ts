@@ -2,7 +2,7 @@
 export const RABBITMQ_URL = 'amqps://fdtczxwk:r828qkAP9gjwtQfSmtcDUPddlBqv4JBt@roedeer.rmq.cloudamqp.com/fdtczxwk';
 export const MONGODB_URL_LIRON = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@finalproject.szjndb6.mongodb.net/EventsBooking?retryWrites=true&w=majority&appName=FinalProject`;
 export const MONGODB_URL_EITAN = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@mycluster.fs213ja.mongodb.net/`
-export const EVENT_SERVER_URL = 'https://finalproject-backend-eventserver.onrender.com:3001';
+export const EVENT_SERVER_URL = 'https://finalproject-backend-eventserver.onrender.com';
 //export const EVENT_SERVER_URL = 'http://localhost:3001';
 export const PAYMENT_API_URL = 'https://www.cs-wsp.net/_functions/pay';
 

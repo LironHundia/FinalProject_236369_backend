@@ -34,21 +34,24 @@ db.once('open', () => {
 //Routing
 // Proxy middleware for /api/event/* routes
 const eventProxy = createProxyMiddleware({
-  target: 'http://localhost:3001',
+  //target: 'http://localhost:3001',
+  target: 'https://finalproject-backend-eventserver.onrender.com',
   changeOrigin: true,
   onProxyReq: fixRequestBody
 });
 
 // Proxy middleware for /api/comment/* routes
 const commentProxy = createProxyMiddleware({
-  target: 'http://localhost:3004',
+  //target: 'http://localhost:3004',
+  target: 'https://finalproject-backend-commentserver.onrender.com',
   changeOrigin: true,
   onProxyReq: fixRequestBody
 });
 
 // Proxy middleware for /api/order/* routes
 const orderProxy = createProxyMiddleware({
-  target: 'http://localhost:3003',
+  //target: 'http://localhost:3003',
+  target: 'https://finalproject-backend-orderserver.onrender.com',
   changeOrigin: true,
   onProxyReq: fixRequestBody
 });
