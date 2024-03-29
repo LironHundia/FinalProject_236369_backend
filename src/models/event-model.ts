@@ -35,6 +35,7 @@ const eventSchema = new Schema({
     name: String,
     category: { type: String, enum: Object.values(Category) }, // replace with your categories
     organizer: String,
+    location: String,
     start_date: String,
     end_date: String,
     description: String,
@@ -55,6 +56,7 @@ export interface IEvent extends Document {
     name: string;
     category: string;
     organizer: string;
+    location?: string;
     start_date: string;
     end_date: string;
     description: string;
@@ -93,6 +95,7 @@ export const validateEvent = (messageBody: any) => {
         name: Joi.string().required(),
         category: Joi.string().valid('Charity Event', 'Concert', 'Conference', 'Convention', 'Exhibition', 'Festival', 'Product Launch', 'Sport Event').required(),
         organizer: Joi.string().required(),
+        location: Joi.string().optional(),
         start_date: Joi.string().isoDate().required(),
         end_date: Joi.string().isoDate().required(),
         description: Joi.string().required(),

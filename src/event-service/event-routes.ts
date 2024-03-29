@@ -8,8 +8,6 @@ import { validateEventDates, validateDateUpdate} from '../utilities.js';
 const publisherChannel = new PublisherChannel();
 
 export async function addNewEvent(req: Request, res: Response) {
-    console.log("Event server got request");
-
     try {
         // Validate the request body using the validateEvent function
         const { error } = validateEvent(req.body);
