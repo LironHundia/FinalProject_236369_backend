@@ -79,6 +79,9 @@ app.post('/api/logout', userRoute.logout);
 // Get Username (by username in the token)
 app.get('/api/username', userRoute.getUsername);
 
+// Get Username (by username in the token)
+app.get('/api/permission', userRoute.getUsernamePermission);
+
 // Update permissions (by username in the body)
 app.put('/api/permission', userRoute.updatePermissions);
 

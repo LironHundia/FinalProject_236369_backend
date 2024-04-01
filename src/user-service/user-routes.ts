@@ -103,6 +103,40 @@ export async function getUsername(req: Request, res: Response) {
     res.status(constants.STATUS_OK).send({ username });
 }
 
+export async function getUsernamePermission(req: Request, res: Response) {
+    const token = req.cookies.userToken;
+    if (!token) {
+        res.status(constants.STATUS_UNAUTHORIZED).send('Not logged in');
+        return;
+    }
+
+    let username;
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        username = (payload as JwtPayload).username;
+        if (!payload) {
+            res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
+            return;
+        }
+    } catch (e) {
+        res.status(constants.STATUS_UNAUTHORIZED).send('Invalid token');
+        return;
+    }
+
+    try {
+        const user: IUser | null = await User.findOne({ username: username }).exec();
+        if (!user) {
+            res.status(constants.STATUS_NOT_FOUND).send('User not found');
+            return;
+        }
+        res.status(constants.STATUS_OK).send({ username, permission: user.permission });
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
+        return;
+    }
+}
+
 export async function updatePermissions(req: Request, res: Response) {
     // check if the user logged in
     const token = req.cookies.userToken;
