@@ -146,9 +146,14 @@ export async function getAllAvailableEvents(req: Request, res: Response) {
               $group: {
                 _id: '$_id', // Group by event ID
                 name: { $first: '$name' }, // Include the event name
-                start_date: { $first: '$start_date' }, // Include the event start date
+                category: { $first: '$category' }, // Include the event category
                 description: { $first: '$description' }, // Include the event description
+                start_date: { $first: '$start_date' }, // Include the event start date
+                end_date: { $first: '$end_date' }, // Include the event end date
+                location: { $first: '$location' }, // Include the event location
+                tickets: { $push: '$tickets' }, // Include the available tickets
                 total_available_tickets: { $first: '$total_available_tickets' }, // Include the total number of available tickets
+                image_url: { $first: '$image_url' }, // Include the event image
                 lowestPrice: { $min: '$tickets.price' } // Get the minimum price of available tickets
               }
             },
