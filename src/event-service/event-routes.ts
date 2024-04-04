@@ -15,7 +15,7 @@ export async function addNewEvent(req: Request, res: Response) {
             res.status(constants.STATUS_BAD_REQUEST).send(error.details[0].message);
             return;
         }
-        if (validateEventDates(req.body.start_date, req.body.end_date) == false) {
+        if (validateEventDates(req.body.startDate, req.body.endDate) == false) {
             res.status(constants.STATUS_BAD_REQUEST).send('invalid date');
             return;
         }
@@ -35,7 +35,7 @@ export async function addNewEvent(req: Request, res: Response) {
 
 export async function updateEvent(req: Request, res: Response) {
     const eventId = req.params.eventId;
-    const { end_date, start_date } = req.body;
+    const { endDate, startDate } = req.body;
 
     // Check if eventId is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
@@ -44,14 +44,14 @@ export async function updateEvent(req: Request, res: Response) {
     }
 
     // Check if end_date is provided
-    if (!end_date && !start_date) {
+    if (!endDate && !startDate) {
         res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - start_date or end_date are required');
         return;
     }
 
-    let EndDate: string;
-    let StartDate: string;
-    //checking if the event exists and the new end_date is valid
+    let updateEndDate: string;
+    let updateStartDate: string;
+    //checking if the event exists and the new endDate is valid
     try {
         // Fetch the current event
         const currentEvent = await Event.findById(eventId);
@@ -63,11 +63,11 @@ export async function updateEvent(req: Request, res: Response) {
         }
 
         // if we updated date - take the new date, otherwise take the old one
-        EndDate = end_date ? end_date : currentEvent.end_date;
-        StartDate = start_date ? start_date : currentEvent.start_date;
+        updateEndDate = endDate ? endDate : currentEvent.endDate;
+        updateStartDate = startDate ? startDate : currentEvent.startDate;
 
         // Check if the update is valid
-        if (!validateEventDates(StartDate, EndDate) || !validateDateUpdate(currentEvent, StartDate)) {
+        if (!validateEventDates(updateStartDate, updateEndDate) || !validateDateUpdate(currentEvent, updateStartDate)) {
             res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - invalid new dates');
             return;
         }
@@ -80,7 +80,7 @@ export async function updateEvent(req: Request, res: Response) {
     //update the event
     let updatedEvent: IEvent;
     try {
-        updatedEvent = await Event.findOneAndUpdate({ _id: eventId }, { start_date: StartDate, end_date: EndDate }, { new: true });
+        updatedEvent = await Event.findOneAndUpdate({ _id: eventId }, { startDate: updateStartDate, endDate: updateEndDate }, { new: true });
     } catch (error) {
         console.error('Error updating event:', error);
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
@@ -89,7 +89,7 @@ export async function updateEvent(req: Request, res: Response) {
 
     //create update event for User and Order services by message broker
     try {
-        await publisherChannel.sendEvent(constants.EVENT_UPDATE_EXCHANGE, constants.EVENT_UPDATE_QUEUE, JSON.stringify({ eventId: updatedEvent._id, start_date: updatedEvent.start_date, end_date: updatedEvent.end_date }));
+        await publisherChannel.sendEvent(constants.EVENT_UPDATE_EXCHANGE, constants.EVENT_UPDATE_QUEUE, JSON.stringify({ eventId: updatedEvent._id, startDate: updatedEvent.startDate, endDate: updatedEvent.endDate }));
         res.status(constants.STATUS_OK).send({ _id: updatedEvent._id });
         return;
     } catch (error) {
@@ -133,13 +133,13 @@ export async function getAllAvailableEvents(req: Request, res: Response) {
         const availabelEvents = await Event.aggregate([
             {
               $match: {
-                'tickets.available_quantity': { $gt: 0 } // Match events with available tickets
+                'tickets.availableQuantity': { $gt: 0 } // Match events with available tickets
               }
             },
             { $unwind: '$tickets' }, // Deconstruct the tickets array
             {
               $match: {
-                'tickets.available_quantity': { $gt: 0 } // Match tickets that are available
+                'tickets.availableQuantity': { $gt: 0 } // Match tickets that are available
               }
             },
             {
@@ -148,12 +148,12 @@ export async function getAllAvailableEvents(req: Request, res: Response) {
                 name: { $first: '$name' }, // Include the event name
                 category: { $first: '$category' }, // Include the event category
                 description: { $first: '$description' }, // Include the event description
-                start_date: { $first: '$start_date' }, // Include the event start date
-                end_date: { $first: '$end_date' }, // Include the event end date
+                startDate: { $first: '$startDate' }, // Include the event start date
+                endDate: { $first: '$endDate' }, // Include the event end date
                 location: { $first: '$location' }, // Include the event location
                 tickets: { $push: '$tickets' }, // Include the available tickets
-                total_available_tickets: { $first: '$total_available_tickets' }, // Include the total number of available tickets
-                image_url: { $first: '$image_url' }, // Include the event image
+                totalAvailableTickets: { $first: '$totalAvailableTickets' }, // Include the total number of available tickets
+                imageUrl: { $first: '$imageUrl' }, // Include the event image
                 lowestPrice: { $min: '$tickets.price' } // Get the minimum price of available tickets
               }
             },
@@ -205,12 +205,12 @@ export async function secureTickets(req: Request, res: Response)
         }
         const ticketCategory = event.tickets.find(ticket => ticket.type === ticketType);
 
-        if (ticketCategory && ticketCategory.available_quantity >= quantity_value) {
+        if (ticketCategory && ticketCategory.availableQuantity >= quantity_value) {
             // Reduce the available quantity to secure the tickets - TODO: Ensure this is done atomically
-            ticketCategory.available_quantity -= quantity_value;
+            ticketCategory.availableQuantity -= quantity_value;
             const username = ''; // Declare or initialize the 'username' variable
 
-            event.total_available_tickets -= quantity_value;
+            event.totalAvailableTickets -= quantity_value;
 
             // Add a temporary reservation with orderId and expiry time
             event.reservations.push({
@@ -235,8 +235,8 @@ export async function secureTickets(req: Request, res: Response)
                     {
                         // Release the tickets
                         const ticketToUpdate = eventToUpdate.tickets.find(ticket => ticket.type === ticketType);
-                        ticketToUpdate.available_quantity += quantity_value;
-                        eventToUpdate.total_available_tickets += quantity_value;
+                        ticketToUpdate.availableQuantity += quantity_value;
+                        eventToUpdate.totalAvailableTickets += quantity_value;
                         eventToUpdate.reservations = eventToUpdate.reservations.filter(res => res.orderId !== orderId);
                         await eventToUpdate.save();
                     }
@@ -277,7 +277,7 @@ export async function buyTickets(req: Request, res: Response)
             reservation.confirmed = true;
             await event.save();
 
-            res.status(constants.STATUS_OK).json({ message: 'Tickets purchase confirmed', event_name: event.name ,start_date: event.start_date, end_date: event.end_date});
+            res.status(constants.STATUS_OK).json({ message: 'Tickets purchase confirmed', eventName: event.name ,startDate: event.startDate, endDate: event.endDate});
             return;
         } else {
             res.status(constants.STATUS_BAD_REQUEST).send('Reservation not found or already confirmed');

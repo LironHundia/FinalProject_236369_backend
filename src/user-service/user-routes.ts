@@ -309,7 +309,7 @@ export async function buyTicket(req: Request, res: Response) {
 
     assert(confirmResponse.status === constants.STATUS_OK, 'Error confirming purchase');
     //Publish new order made!
-    const msg = JSON.stringify({ username, eventId, quantity, totalPrice: charge, ticketType, start_date: confirmResponse.data.start_date, end_date: confirmResponse.data.end_date })
+    const msg = JSON.stringify({ username, eventId, quantity, totalPrice: charge, ticketType, startDate: confirmResponse.data.startDate, endDate: confirmResponse.data.endDate })
     publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
     res.clearCookie('paymentToken', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' }); //TODO: CHANGE BACK TO: true, 
     res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });

@@ -9,8 +9,8 @@ export async function updateOrder(msg: string)
 {
     try {
         const messageContent = JSON.parse(msg);
-        const { eventId, start_date, end_date } = messageContent;
-        await Order.updateMany({ eventId: eventId }, { start_date: start_date, end_date: end_date });
+        const { eventId, startDate, endDate } = messageContent;
+        await Order.updateMany({ eventId: eventId }, { startDate: startDate, endDate: endDate });
         return;
     } catch (error) {
         console.error('Error updating order:', error);
@@ -20,8 +20,8 @@ export async function updateOrder(msg: string)
 export async function addNewOrderFromListener(msg: string) {
     try {
         const messageContent = JSON.parse(msg);
-        const { username, eventId, quantity, totalPrice, ticketType, start_date, end_date } = messageContent;
-        const newOrder = new Order({ username, eventId, quantity, totalPrice, ticketsType: ticketType, start_date:start_date, end_date:end_date });
+        const { username, eventId, quantity, totalPrice, ticketType, startDate, endDate } = messageContent;
+        const newOrder = new Order({ username, eventId, quantity, totalPrice, ticketsType: ticketType, startDate:startDate, endDate:endDate });
         await newOrder.save();
     } catch (error) {
         console.error('Error adding order:', error);
@@ -36,13 +36,13 @@ export async function getUserNextEvent(req: Request, res: Response) {
     }
     try {
         const nextEvent = await Order
-            .findOne({ username: username, start_date: { $gte: new Date() } })
-            .sort({ start_date: 1 });
+            .findOne({ username: username, startDate: { $gte: new Date() } })
+            .sort({ startDate: 1 });
 
         if (!nextEvent) {
             return res.status(404).json({ message: 'No upcoming events found for this user' });
         }
-        res.status(200).json({ event: { eventId: nextEvent.eventId, start_date: nextEvent.start_date } });
+        res.status(200).json({ event: { eventId: nextEvent.eventId, startDate: nextEvent.startDate } });
     } catch (error) {
         console.error('Error fetching next event:', error);
         res.status(500).json({ error: 'Internal server error' });

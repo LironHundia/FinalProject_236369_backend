@@ -7,8 +7,8 @@ const orderSchema = new mongoose.Schema({
     quantity: Number,
     totalPrice: Number,
     ticketsType: String,
-    start_date: Date,
-    end_date: Date,
+    startDate: Date,
+    endDate: Date,
     purchaseDate: { type: Date, default: Date.now },
   });
   

@@ -16,8 +16,8 @@ export enum Category {
 const ticketsCategoriesSchema = new Schema({
     type: String,
     price: Number,
-    initial_quantity: Number,
-    available_quantity: Number,
+    initialQuantity: Number,
+    availableQuantity: Number,
  } ,  {_id: false} );
 
 // Define the reservation schema
@@ -34,13 +34,13 @@ const ticketsCategoriesSchema = new Schema({
 const eventSchema = new Schema({
     name: String,
     category: { type: String, enum: Object.values(Category) }, // replace with your categories
-    organizer: String,
     location: String,
-    start_date: String,
-    end_date: String,
+    startDate: String,
+    endDate: String,
     description: String,
-    total_available_tickets: Number,
-    image_url: String,
+    totalAvailableTickets: Number,
+    lowestPrice: Number,
+    imageUrl: String,
     tickets: {
         type: [ticketsCategoriesSchema],
         validate: [arrayLimit, 'expects at least 1 ticket item!.']
@@ -55,18 +55,18 @@ function arrayLimit(val: Array<any>) {
 export interface IEvent extends Document {
     name: string;
     category: string;
-    organizer: string;
-    location?: string;
-    start_date: string;
-    end_date: string;
+    location: string;
+    startDate: string;
+    endDate: string;
     description: string;
-    total_available_tickets: number;
-    image_url: string;
+    totalAvailableTickets: number;
+    lowestPrice: number;
+    imageUrl: string;
     tickets: Array<{
         type: string;
         price: number;
-        initial_quantity: number;
-        available_quantity: number;
+        initialQuantity: number;
+        availableQuantity: number;
     }>;
     reservations: Array<{
         username: string;
@@ -86,22 +86,22 @@ export const validateEvent = (messageBody: any) => {
     const ticketsCategoriesJoiSchema = Joi.object({
         type: Joi.string().required(),
         price: Joi.number().required(),
-        initial_quantity: Joi.number().required(),
-        available_quantity: Joi.number().required(),
+        initialQuantity: Joi.number().required(),
+        availableQuantity: Joi.number().required(),
     });
 
     // Define the event schema
     const eventJoiSchema = Joi.object({
         name: Joi.string().required(),
         category: Joi.string().valid('Charity Event', 'Concert', 'Conference', 'Convention', 'Exhibition', 'Festival', 'Product Launch', 'Sport Event').required(),
-        organizer: Joi.string().required(),
         location: Joi.string().optional(),
-        start_date: Joi.string().isoDate().required(),
-        end_date: Joi.string().isoDate().required(),
+        startDate: Joi.string().isoDate().required(),
+        endDate: Joi.string().isoDate().required(),
         description: Joi.string().required(),
         tickets: Joi.array().items(ticketsCategoriesJoiSchema).min(1).required(),
-        total_available_tickets: Joi.number().required(),
-        image_url: Joi.string().uri().allow('').optional(), //add difault image url if not provided
+        totalAvailableTickets: Joi.number().required(),
+        lowestPrice: Joi.number().required(),
+        imageUrl: Joi.string().uri().allow('').optional(), //add difault image url if not provided
     }).unknown();
 
     // Validate the message body
