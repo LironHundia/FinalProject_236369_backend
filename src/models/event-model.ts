@@ -35,11 +35,11 @@ const eventSchema = new Schema({
     name: String,
     category: { type: String, enum: Object.values(Category) }, // replace with your categories
     location: String,
-    startDate: String,
-    endDate: String,
+    startDate: Date,
+    endDate: Date,
     description: String,
     totalAvailableTickets: Number,
-    lowestPrice: Number,
+    lowestPrice: {type: Number, index: true},
     imageUrl: String,
     tickets: {
         type: [ticketsCategoriesSchema],
@@ -56,8 +56,8 @@ export interface IEvent extends Document {
     name: string;
     category: string;
     location: string;
-    startDate: string;
-    endDate: string;
+    startDate: Date;
+    endDate: Date;
     description: string;
     totalAvailableTickets: number;
     lowestPrice: number;
@@ -78,6 +78,7 @@ export interface IEvent extends Document {
     }>;
 }
 
+eventSchema.index({ lowestPrice: 1 });
 export const Event = mongoose.model<IEvent>('Event', eventSchema);
 
 
@@ -99,8 +100,6 @@ export const validateEvent = (messageBody: any) => {
         endDate: Joi.string().isoDate().required(),
         description: Joi.string().required(),
         tickets: Joi.array().items(ticketsCategoriesJoiSchema).min(1).required(),
-        totalAvailableTickets: Joi.number().required(),
-        lowestPrice: Joi.number().required(),
         imageUrl: Joi.string().uri().allow('').optional(), //add difault image url if not provided
     }).unknown();
 

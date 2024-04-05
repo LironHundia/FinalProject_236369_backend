@@ -33,6 +33,9 @@ export const DEFAULT_LIMIT = 25;
 export const DEFAULT_SKIP = 0;
 export const DEFAULT_PAGE = 1;
 
+export const SORT_ASC = "asc";
+export const SORT_DESC = "desc";
+
 //Permission levels
 export const WORKER_LEVEL = "W";
 export const MANAGER_LEVEL = "M";

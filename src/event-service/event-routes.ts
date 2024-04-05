@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import * as constants from '../const.js';
 import { IEvent, Event, validateEvent } from '../models/event-model.js';
-import {PublisherChannel} from './publisher-channel.js';
-import { validateEventDates, validateDateUpdate} from '../utilities.js';
+import { PublisherChannel } from './publisher-channel.js';
+import { validateEventDates, validateDateUpdate } from '../utilities.js';
 
 const publisherChannel = new PublisherChannel();
 
@@ -20,14 +20,18 @@ export async function addNewEvent(req: Request, res: Response) {
             return;
         }
 
+        // Calculate the lowest price and the sum of all available quantities
+        const lowestPrice = Math.min(...req.body.tickets.map(ticket => ticket.price));
+        const totalAvailableTickets = req.body.tickets.reduce((sum, ticket) => sum + parseInt(ticket.availableQuantity), 0);
+
         // If validation passes, create a new Event document and save it to the database
-        const newEvent: IEvent = new Event(req.body);
+        const newEvent: IEvent = new Event({...req.body,lowestPrice,totalAvailableTickets});
         await newEvent.save();
 
         res.status(constants.STATUS_CREATED).send({ _id: newEvent.id });
         return;
     } catch (error) {
-                console.error('Error adding event:', error);
+        console.error('Error adding event:', error);
         res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
         return;
     }
@@ -101,7 +105,7 @@ export async function updateEvent(req: Request, res: Response) {
 
 export async function getEventById(req: Request, res: Response) {
     try {
-                const eventId = req.params.eventId;
+        const eventId = req.params.eventId;
         // Check if eventId is a valid ObjectId
         if (!mongoose.Types.ObjectId.isValid(eventId)) {
             res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - eventId is not a valid ObjectId');
@@ -126,43 +130,27 @@ export async function getEventById(req: Request, res: Response) {
 export async function getAllAvailableEvents(req: Request, res: Response) {
     const page = parseInt(req.query.page as string) || constants.DEFAULT_PAGE; //gets the page parameter from query params. defaulting to 1 if it's not provided.
     let limit = parseInt(req.query.limit as string) || constants.DEFAULT_LIMIT;
+    let sort = req.query.sort as string; //gets the sort parameter from query params. defaulting to 'asc' if it's not provided.
     limit = Math.min(limit, constants.DEFAULT_LIMIT); // limit is the minimum of the provided limit and DEFAULT_LIMIT
     const skip = (page - 1) * limit;
 
     try {
-        const availabelEvents = await Event.aggregate([
-            {
-              $match: {
-                'tickets.availableQuantity': { $gt: 0 } // Match events with available tickets
-              }
-            },
-            { $unwind: '$tickets' }, // Deconstruct the tickets array
-            {
-              $match: {
-                'tickets.availableQuantity': { $gt: 0 } // Match tickets that are available
-              }
-            },
-            {
-              $group: {
-                _id: '$_id', // Group by event ID
-                name: { $first: '$name' }, // Include the event name
-                category: { $first: '$category' }, // Include the event category
-                description: { $first: '$description' }, // Include the event description
-                startDate: { $first: '$startDate' }, // Include the event start date
-                endDate: { $first: '$endDate' }, // Include the event end date
-                location: { $first: '$location' }, // Include the event location
-                tickets: { $push: '$tickets' }, // Include the available tickets
-                totalAvailableTickets: { $first: '$totalAvailableTickets' }, // Include the total number of available tickets
-                imageUrl: { $first: '$imageUrl' }, // Include the event image
-                lowestPrice: { $min: '$tickets.price' } // Get the minimum price of available tickets
-              }
-            },
-           // { $sort: { lowestPrice: 1 } }, // **** OPTION TO SORT BY PRICE!!! ****
-            { $skip: skip }, // Skip the first 'skip' documents
-            { $limit: limit } // Limit the results to 'limit' documents
-          ])
+        let sortObject: { startDate: number; lowestPrice?: number } = { startDate: 1 }; // Default sort by startDate
 
-        res.status(constants.STATUS_OK).send(availabelEvents);
+        if (sort) {
+            const sortOrder = sort === constants.SORT_ASC ? 1 : -1; // Set sort order based on the sort flag
+            sortObject = { lowestPrice: sortOrder, startDate: 1 }; // If sort query parameter is provided, sort by startDate and lowestPrice
+        }
+
+        const availableEvents = await Event.find({
+            totalAvailableTickets: { $gt: 0 }, // Match events with available tickets
+            startDate: { $gt: new Date() } // Match events whose startDate has not yet arrived
+        })
+            .sort(sortObject as { [key: string]: mongoose.SortOrder }) // Sort by ticket price
+            .skip(skip) // Skip the first 'skip' documents
+            .limit(limit); // Limit the results to 'limit' documents
+
+        res.status(constants.STATUS_OK).send(availableEvents);
         return;
     } catch (error) {
         console.error('Error getting events:', error);
@@ -178,7 +166,7 @@ export async function getAllEvents(req: Request, res: Response) {
         limit = Math.min(limit, constants.DEFAULT_LIMIT); // limit is the minimum of the provided limit and DEFAULT_LIMIT
         const skip = (page - 1) * limit;
 
-        const events = await Event.find().skip(skip).limit(limit);
+        const events = await Event.find().hint({ lowestPrice: 1 }).skip(skip).limit(limit);
         res.status(constants.STATUS_OK).send(events);
     } catch (error) {
         console.error('Error getting events:', error);
@@ -187,8 +175,7 @@ export async function getAllEvents(req: Request, res: Response) {
     }
 }
 
-export async function secureTickets(req: Request, res: Response) 
-{
+export async function secureTickets(req: Request, res: Response) {
     const { eventId, username, ticketType, quantity, orderId } = req.body;
     const quantity_value = parseInt(quantity);
 
@@ -211,6 +198,14 @@ export async function secureTickets(req: Request, res: Response)
             const username = ''; // Declare or initialize the 'username' variable
 
             event.totalAvailableTickets -= quantity_value;
+
+            if (ticketCategory.availableQuantity === 0) {
+                const prices = event.tickets
+                    .filter(ticket => ticket.type !== ticketCategory.type && ticket.availableQuantity > 0)
+                    .map(ticket => ticket.price);
+
+                event.lowestPrice = prices.length > 0 ? Math.min(...prices) : Number.MAX_SAFE_INTEGER;
+            }
 
             // Add a temporary reservation with orderId and expiry time
             event.reservations.push({
@@ -235,6 +230,9 @@ export async function secureTickets(req: Request, res: Response)
                     {
                         // Release the tickets
                         const ticketToUpdate = eventToUpdate.tickets.find(ticket => ticket.type === ticketType);
+                        if (eventToUpdate.totalAvailableTickets === 0) {
+                            eventToUpdate.lowestPrice = Math.min(eventToUpdate.lowestPrice, ticketToUpdate.price)
+                        }
                         ticketToUpdate.availableQuantity += quantity_value;
                         eventToUpdate.totalAvailableTickets += quantity_value;
                         eventToUpdate.reservations = eventToUpdate.reservations.filter(res => res.orderId !== orderId);
@@ -263,8 +261,7 @@ export async function secureTickets(req: Request, res: Response)
     }
 }
 
-export async function buyTickets(req: Request, res: Response) 
-{
+export async function buyTickets(req: Request, res: Response) {
     // Endpoint to confirm ticket purchase
     const { eventId, orderId } = req.body;
 
@@ -277,7 +274,7 @@ export async function buyTickets(req: Request, res: Response)
             reservation.confirmed = true;
             await event.save();
 
-            res.status(constants.STATUS_OK).json({ message: 'Tickets purchase confirmed', eventName: event.name ,startDate: event.startDate, endDate: event.endDate});
+            res.status(constants.STATUS_OK).json({ message: 'Tickets purchase confirmed', eventName: event.name, startDate: event.startDate, endDate: event.endDate });
             return;
         } else {
             res.status(constants.STATUS_BAD_REQUEST).send('Reservation not found or already confirmed');
