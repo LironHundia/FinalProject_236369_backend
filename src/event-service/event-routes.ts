@@ -163,10 +163,22 @@ export async function getAllEvents(req: Request, res: Response) {
     try {
         const page = parseInt(req.query.page as string) || constants.DEFAULT_PAGE; //gets the page parameter from query params. defaulting to 1 if it's not provided.
         let limit = parseInt(req.query.limit as string) || constants.DEFAULT_LIMIT;
+        let sort = req.query.sort as string; //gets the sort parameter from query params. defaulting to 'asc' if it's not provided.
         limit = Math.min(limit, constants.DEFAULT_LIMIT); // limit is the minimum of the provided limit and DEFAULT_LIMIT
         const skip = (page - 1) * limit;
 
-        const events = await Event.find().hint({ lowestPrice: 1 }).skip(skip).limit(limit);
+        let sortObject: { startDate: number; lowestPrice?: number } = { startDate: 1 }; // Default sort by startDate
+
+        if (sort) {
+            const sortOrder = sort === constants.SORT_ASC ? 1 : -1; // Set sort order based on the sort flag
+            sortObject = { lowestPrice: sortOrder, startDate: 1 }; // If sort query parameter is provided, sort by startDate and lowestPrice
+        }
+
+        const events = await Event.find()
+        .sort(sortObject as { [key: string]: mongoose.SortOrder }) // Sort by ticket price
+        .skip(skip) // Skip the first 'skip' documents
+        .limit(limit); // Limit the results to 'limit' documents
+        
         res.status(constants.STATUS_OK).send(events);
     } catch (error) {
         console.error('Error getting events:', error);
