@@ -14,7 +14,7 @@ export async function getCommentsArrayByEventId(req: Request, res: Response)
     let skip = setSkip(req.query.skip); 
 
     try {
-        const comments = await Comment.find({ eventId: eventId }).skip(skip).limit(limit);
+        const comments = await Comment.find({ eventId: eventId }).sort({date: 1}).skip(skip).limit(limit);
         res.status(200).json({ comments: comments });
     } catch (error) {
         console.error('Error fetching comments:', error);
