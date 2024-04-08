@@ -266,8 +266,8 @@ export async function buyTicket(req: Request, res: Response) {
         return;
     }
 
-    const { username, eventId, ticketType, quantity } = req.body;
-    const { cc, holder, cvv, exp, charge } = req.body.payment; //Note! validation of CC info is done on front end!
+    const { username, eventId, ticketType, quantity, cc, holder, cvv, exp, charge } = req.body;
+    //Note! validation of CC info is done on front end!
 
      // Step 2: Call the Payment API
     let paymentResponse;
