@@ -312,7 +312,7 @@ export async function buyTicket(req: Request, res: Response) {
     const msg = JSON.stringify({ username, eventId, quantity, totalPrice: charge, ticketType, startDate: confirmResponse.data.startDate, endDate: confirmResponse.data.endDate })
     publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
     res.clearCookie('paymentToken', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' }); //TODO: CHANGE BACK TO: true, 
-    res.status(constants.STATUS_OK).json({ message: 'Ticket purchase successful', orderId });
+    res.status(constants.STATUS_OK).send(paymentResponse.data.paymentToken);
     return;
 }
 
