@@ -38,6 +38,7 @@ const eventSchema = new Schema({
     startDate: Date,
     endDate: Date,
     description: String,
+    organizer: String,
     totalAvailableTickets: Number,
     lowestPrice: {type: Number, index: true},
     imageUrl: String,
@@ -59,6 +60,7 @@ export interface IEvent extends Document {
     startDate: Date;
     endDate: Date;
     description: string;
+    organizer: String,
     totalAvailableTickets: number;
     lowestPrice: number;
     imageUrl: string;
@@ -98,6 +100,7 @@ export const validateEvent = (messageBody: any) => {
         location: Joi.string().optional(),
         startDate: Joi.string().isoDate().required(),
         endDate: Joi.string().isoDate().required(),
+        organizer: Joi.string().required(),
         description: Joi.string().required(),
         tickets: Joi.array().items(ticketsCategoriesJoiSchema).min(1).required(),
         imageUrl: Joi.string().uri().allow('').optional(), //add difault image url if not provided
