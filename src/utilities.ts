@@ -20,11 +20,11 @@ export const signupAdmin = async() => {
 };
 
 //checks that date format is OK
-export function validateEventDates(start_date: any, end_date: string): boolean {
-    const dateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+export function validateEventDates(start_date: any, end_date: any): boolean {
+    /*const dateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
     if (!dateRegex.test(start_date) || !dateRegex.test(end_date)) {
         return false;
-    }
+    }*/
     const start = new Date(start_date);
     const end = new Date(end_date);
     return start < end;
