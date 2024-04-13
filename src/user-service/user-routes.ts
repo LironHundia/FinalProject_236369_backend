@@ -34,7 +34,7 @@ export async function login(req: Request, res: Response) {
         return;
     }
 
-    const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '2d' })
+    const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '1d' })
 
     //TODO: CHANGE BACK TO: secure: true, sameSite: 'none'
     //res.cookie('userToken', token, { httpOnly: true, secure: false, sameSite: 'lax' });
