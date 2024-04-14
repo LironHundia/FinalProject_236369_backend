@@ -42,7 +42,7 @@ export async function getUserNextEvent(req: Request, res: Response) {
         if (!nextEvent) {
             return res.status(404).json({ message: 'No upcoming events found for this user' });
         }
-        res.status(200).json({ event: { eventId: nextEvent.eventId, startDate: nextEvent.startDate } });
+        res.status(200).json({ eventId: nextEvent.eventId, startDate: nextEvent.startDate });
     } catch (error) {
         console.error('Error fetching next event:', error);
         res.status(500).json({ error: 'Internal server error' });
