@@ -20,8 +20,8 @@ export async function updateOrder(msg: string)
 export async function addNewOrderFromListener(msg: string) {
     try {
         const messageContent = JSON.parse(msg);
-        const { username, eventId, quantity, totalPrice, ticketType, startDate, endDate } = messageContent;
-        const newOrder = new Order({ username, eventId, quantity, totalPrice, ticketsType: ticketType, startDate:startDate, endDate:endDate });
+        const { username, eventId, eventName, description, location, organizer, quantity, totalPrice, ticketType, startDate, endDate } = messageContent;
+        const newOrder = new Order({ username, eventId, eventName, description, location, organizer,quantity, totalPrice, ticketsType: ticketType, startDate, endDate });
         await newOrder.save();
     } catch (error) {
         console.error('Error adding order:', error);
@@ -42,7 +42,7 @@ export async function getUserNextEvent(req: Request, res: Response) {
         if (!nextEvent) {
             return res.status(404).json({ message: 'No upcoming events found for this user' });
         }
-        res.status(200).json({ eventId: nextEvent.eventId, startDate: nextEvent.startDate });
+        res.status(200).json({ eventId: nextEvent.eventId, eventName: nextEvent.eventName, startDate: nextEvent.startDate });
     } catch (error) {
         console.error('Error fetching next event:', error);
         res.status(500).json({ error: 'Internal server error' });

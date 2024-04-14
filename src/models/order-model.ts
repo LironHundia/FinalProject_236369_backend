@@ -4,6 +4,10 @@ import * as mongoose from "mongoose";
 const orderSchema = new mongoose.Schema({
     username: { type: String, index: true },
     eventId: String,
+    eventName: String,
+    description: String,
+    location: String,
+    organizer: String,
     quantity: Number,
     totalPrice: Number,
     ticketsType: String,

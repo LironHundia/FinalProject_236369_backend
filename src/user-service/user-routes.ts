@@ -71,7 +71,7 @@ export async function signup(req: Request, res: Response) {
     // Create new user
     const encryptPassword = await bcrypt.hash(credentials.password, 10);
     try {
-        const newUser: IUser = new User({username: credentials.username, password: encryptPassword, permission: constants.WORKER_LEVEL});
+        const newUser: IUser = new User({ username: credentials.username, password: encryptPassword, permission: constants.WORKER_LEVEL });
         await newUser.save();
     }
     catch (error) {
@@ -226,7 +226,7 @@ export async function secureTicket(req: Request, res: Response) {
         });
 
     } catch (error) {
-        if(error.response) {
+        if (error.response) {
             res.status(error.response.status).send(error.response.data);
         }
         else {
@@ -269,7 +269,7 @@ export async function buyTicket(req: Request, res: Response) {
     const { username, eventId, ticketType, quantity, cc, holder, cvv, exp, charge } = req.body;
     //Note! validation of CC info is done on front end!
 
-     // Step 2: Call the Payment API
+    // Step 2: Call the Payment API
     let paymentResponse;
     try {
         paymentResponse = await axios.post(constants.PAYMENT_API_URL, {
@@ -280,7 +280,7 @@ export async function buyTicket(req: Request, res: Response) {
             charge
         });
     } catch (error) {
-        if(error.response) {
+        if (error.response) {
             res.status(error.response.status).send(error.response.data);
         }
         else {
@@ -298,7 +298,7 @@ export async function buyTicket(req: Request, res: Response) {
             orderId
         });
     } catch (error) {
-        if(error.response) {
+        if (error.response) {
             res.status(error.response.status).send(error.response.data);
         }
         else {
@@ -309,7 +309,12 @@ export async function buyTicket(req: Request, res: Response) {
 
     assert(confirmResponse.status === constants.STATUS_OK, 'Error confirming purchase');
     //Publish new order made!
-    const msg = JSON.stringify({ username, eventId, quantity, totalPrice: charge, ticketType, startDate: confirmResponse.data.startDate, endDate: confirmResponse.data.endDate })
+    const msg = JSON.stringify({
+        username, eventId, quantity, totalPrice: charge,
+        ticketType, eventName: confirmResponse.data.eventName, description: confirmResponse.data.description, location: confirmResponse.data.location,
+        organizer: confirmResponse.data.organizer, startDate: confirmResponse.data.startDate,
+        endDate: confirmResponse.data.endDate
+    })
     publisherChannel.sendEvent(constants.ORDER_EXCHANGE, constants.ORDER_QUEUE, msg);
     res.clearCookie('paymentToken', { httpOnly: true, secure: false, sameSite: 'lax', path: '/' }); //TODO: CHANGE BACK TO: true, 
     res.status(constants.STATUS_OK).send(paymentResponse.data.paymentToken);
