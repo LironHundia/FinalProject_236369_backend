@@ -3,7 +3,7 @@ import * as constants from '../const.js';
 import { Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { PublisherChannel } from './publisher-channel.js';
-import { User, IUser, validateUserComment, validateUserCredentials, validatePermissionCredentials } from '../models/user-model.js';
+import { User, IUser, validateUserComment, validateUserCredentials,validateUserChangePassword, validatePermissionCredentials } from '../models/user-model.js';
 import { isAutherizedClient } from '../utilities.js';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
@@ -70,8 +70,15 @@ export async function signup(req: Request, res: Response) {
 
     // Create new user
     const encryptPassword = await bcrypt.hash(credentials.password, 10);
+    const encryptSecurityAnswer = await bcrypt.hash(credentials.securityAnswer, 10);
     try {
-        const newUser: IUser = new User({ username: credentials.username, password: encryptPassword, permission: constants.WORKER_LEVEL });
+        const newUser: IUser = new User({
+            username: credentials.username,
+            password: encryptPassword,
+            securityQuestion: credentials.securityQuestion,
+            securityAnswer: encryptSecurityAnswer,
+            permission: constants.WORKER_LEVEL
+        });
         await newUser.save();
     }
     catch (error) {
@@ -81,6 +88,61 @@ export async function signup(req: Request, res: Response) {
     }
 
     res.status(constants.STATUS_CREATED).send('User created');
+}
+
+export async function getSecurityQuestion(req: Request, res: Response) {
+    const credentials = req.body;
+    if (!credentials.username) {
+        res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials - Username is required');
+        return;
+    }
+    let user;
+
+    try {
+        user = await User.findOne({ username: credentials.username });
+
+        if (!user) {
+            res.status(constants.STATUS_NOT_FOUND).send('No such user found');
+            return;
+        }
+
+        res.status(constants.STATUS_OK).send(user.securityQuestion);
+        return;
+    }
+    catch (e) {
+        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
+        return;
+    }
+}
+
+export async function changePassword(req: Request, res: Response) {
+    const credentials = req.body;
+    const { error } = validateUserChangePassword(credentials);
+    if (error) {
+        res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
+        return;
+    }
+    let user;
+    try {
+        user = await User.findOne({ username: credentials.username });
+        if (!user) {
+            res.status(constants.STATUS_NOT_FOUND).send('User not found');
+            return;
+        }
+        if (!await bcrypt.compare(credentials.securityAnswer, user.securityAnswer)) {
+            res.status(constants.STATUS_UNAUTHORIZED).send('Invalid security answer');
+            return;
+        }
+        const encryptPassword = await bcrypt.hash(credentials.password, 10);
+        user.password = encryptPassword;
+        user.save();
+        res.status(constants.STATUS_OK).send('Password changed successfully');
+        return;
+    }
+    catch (e) {
+        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
+        return;
+    }
 }
 
 export async function getUsername(req: Request, res: Response) {

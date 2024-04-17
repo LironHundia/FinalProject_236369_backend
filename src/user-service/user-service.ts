@@ -70,6 +70,12 @@ app.get('/api/order/:userId?',checkPermissionProxyMiddleware(constants.WORKER_LE
 // Signup
 app.post('/api/signup', userRoute.signup);
 
+// Get User Security Question
+app.get(`/api/securityQuestion`, userRoute.getSecurityQuestion);
+
+// Change Password
+app.put('/api/changePassword', userRoute.changePassword);
+
 // Login
 app.post('/api/login', userRoute.login);
 

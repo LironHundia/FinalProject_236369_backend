@@ -12,12 +12,16 @@ enum Permission {
 const userSchema = new Schema({
   username: String,
   password: String,
+  securityQuestion: {type: String, maxlength: 200},
+  securityAnswer: String,
   permission: { type: String, enum: Object.values(Permission) },
 });
 
 export interface IUser extends Document {
   username: string;
   password: string;
+  securityQuestion: string;
+  securityAnswer: string;
   permission: string;
 }
 
@@ -45,6 +49,15 @@ export const validateUserCredentials = (messageBody: any) => {
 
   // Validate the message body
   return userJoiSchema.validate(messageBody);
+}
+
+export const validateUserChangePassword = (messageBody: any) => {
+  const userChangePassJoiSchema = Joi.object({
+    username: Joi.string().required(),
+    securityAnswer: Joi.string().required(),
+    password: Joi.string().required(),
+});
+  return userChangePassJoiSchema.validate(messageBody);
 }
 
 export const validatePermissionCredentials = (messageBody: any) => {
