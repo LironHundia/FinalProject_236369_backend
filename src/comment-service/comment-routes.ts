@@ -53,7 +53,7 @@ export async function getRatingAvgByEventId(req: Request, res: Response) {
     if (!eventId)
         return res.status(400).json({ error: 'EventId is required' });
     try {
-        const avg = await Rate.aggregate([{ $match: { eventId: eventId } }, { $group: { _id: null, avg: { $avg: "$rate" } } }]);
+        const avg = await Rate.aggregate([{ $match: { eventId: eventId } }, { $group: { _id: null, avg: { $avg: "$rate" }, total: { $count: "$rate" } } }]);
         res.status(200).json({ avg: avg[0].avg });
     }
     catch (error) {
