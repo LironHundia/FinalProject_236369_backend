@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import * as constants from '../const.js';
 import Joi from 'joi';  
+import { getSecurityQuestion } from '../user-service/user-routes.js';
 
 enum Permission {
   Admin = "A",
@@ -12,7 +13,7 @@ enum Permission {
 const userSchema = new Schema({
   username: String,
   password: String,
-  securityQuestion: {type: String, maxlength: 200},
+  securityQuestion: String,
   securityAnswer: String,
   permission: { type: String, enum: Object.values(Permission) },
 });
@@ -49,6 +50,19 @@ export const validateUserCredentials = (messageBody: any) => {
 
   // Validate the message body
   return userJoiSchema.validate(messageBody);
+}
+
+export const validateUserSignUpCredentials = (messageBody: any) => {
+  // Define the event schema
+  const userSignUpJoiSchema = Joi.object({
+      username: Joi.string().required(),
+      password: Joi.string().required(),
+      securityQuestion: Joi.string().required(),
+      securityAnswer: Joi.string().required(),
+  });
+
+  // Validate the message body
+  return userSignUpJoiSchema.validate(messageBody);
 }
 
 export const validateUserChangePassword = (messageBody: any) => {

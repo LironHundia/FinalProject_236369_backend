@@ -3,7 +3,7 @@ import * as constants from '../const.js';
 import { Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { PublisherChannel } from './publisher-channel.js';
-import { User, IUser, validateUserComment, validateUserCredentials,validateUserChangePassword, validatePermissionCredentials } from '../models/user-model.js';
+import { User, IUser, validateUserComment, validateUserCredentials, validateUserSignUpCredentials, validateUserChangePassword, validatePermissionCredentials } from '../models/user-model.js';
 import { isAutherizedClient } from '../utilities.js';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
@@ -52,7 +52,7 @@ export async function logout(req: Request, res: Response) {
 export async function signup(req: Request, res: Response) {
     // Validate the request body
     const credentials = req.body;
-    const { error } = validateUserCredentials(credentials);
+    const { error } = validateUserSignUpCredentials(credentials);
     if (error) {
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
         return;
