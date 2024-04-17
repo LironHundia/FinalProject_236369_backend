@@ -30,11 +30,20 @@ app.get('/api/comment/count/:eventId?', commentRoute.getCommentsCountByEventId);
 // Get Comments array by Event ID
 app.get('/api/comment/:eventId?', commentRoute.getCommentsArrayByEventId);
 
+// Get user Rating count by username
+app.get('/api/comment/rate/:username', commentRoute.getRatingCountByUsername);
+
+// Get event Rating avarage by username
+app.get('/api/comment/rate/:eventId', commentRoute.getRatingAvgByEventId);
+
+// Get user rating for specific event
+app.get('/api/comment/rate', commentRoute.getUserRatingForEvent);
+
 // Delete All Comments - for debugging
 app.delete('/api/comment/empty', commentRoute.deleteAllComments);
 
 // for debugging
-app.post('/api/comment', commentRoute.add);
+app.post('/api/comment', commentRoute.addComment);
 
 app.all('*', (req, res) => {
   res.status(400).json({ error: 'Bad Request' });});

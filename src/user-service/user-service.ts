@@ -100,6 +100,9 @@ app.post('/api/user/secure', checkPermissionProxyMiddleware(constants.WORKER_LEV
 // Add new comment
 app.post('/api/comment', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), userRoute.addComment);
 
+// Add new Rate
+app.post('/api/rate', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), userRoute.handleRate);
+
 // Delete all Users - for debugging
 app.delete('/api/user/empty', userRoute.deleteAllUsers);
 

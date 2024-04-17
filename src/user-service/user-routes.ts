@@ -3,7 +3,8 @@ import * as constants from '../const.js';
 import { Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { PublisherChannel } from './publisher-channel.js';
-import { User, IUser, validateUserComment, validateUserCredentials, validateUserSignUpCredentials, validateUserChangePassword, validatePermissionCredentials } from '../models/user-model.js';
+import * as userUtils from '../models/user-model.js';
+import { IUser, User } from '../models/user-model.js';
 import { isAutherizedClient } from '../utilities.js';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,7 +15,7 @@ const publisherChannel = new PublisherChannel();
 
 export async function login(req: Request, res: Response) {
     const credentials = req.body;
-    const { error } = validateUserCredentials(credentials);
+    const { error } = userUtils.validateUserCredentials(credentials);
     if (error) {
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
         return;
@@ -52,7 +53,7 @@ export async function logout(req: Request, res: Response) {
 export async function signup(req: Request, res: Response) {
     // Validate the request body
     const credentials = req.body;
-    const { error } = validateUserSignUpCredentials(credentials);
+    const { error } = userUtils.validateUserSignUpCredentials(credentials);
     if (error) {
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
         return;
@@ -117,7 +118,7 @@ export async function getSecurityQuestion(req: Request, res: Response) {
 
 export async function changePassword(req: Request, res: Response) {
     const credentials = req.body;
-    const { error } = validateUserChangePassword(credentials);
+    const { error } = userUtils.validateUserChangePassword(credentials);
     if (error) {
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials');
         return;
@@ -225,7 +226,7 @@ export async function updatePermissions(req: Request, res: Response) {
         return;
     }
     // Validate the request body
-    const { error } = validatePermissionCredentials(req.body);
+    const { error } = userUtils.validatePermissionCredentials(req.body);
     if (error) {
         res.status(constants.STATUS_BAD_REQUEST).send('Bad Request - username and permission are required');
         return;
@@ -254,7 +255,7 @@ export async function updatePermissions(req: Request, res: Response) {
 
 export async function addComment(req: Request, res: Response) {
     // Validate the request body
-    const { error } = validateUserComment(req.body);
+    const { error } = userUtils.validateUserComment(req.body);
     if (error) {
         console.error('Error validating user comment:', error);
         res.status(constants.STATUS_BAD_REQUEST).send(JSON.stringify({ error: error.details[0].message }));
@@ -263,6 +264,26 @@ export async function addComment(req: Request, res: Response) {
     try {
         await publisherChannel.sendEvent(constants.COMMENT_EXCHANGE, constants.COMMENT_QUEUE, JSON.stringify(req.body));
         res.status(constants.STATUS_CREATED).send('Comment added successfully');
+        return;
+    }
+    catch (error) {
+        console.error('Error adding event:', error);
+        res.status(constants.STATUS_INTERNAL_SERVER_ERROR).send('Internal server error');
+
+    }
+}
+
+export async function handleRate(req: Request, res: Response) {
+    // Validate the request body
+    const { error } = userUtils.validateUserRate(req.body);
+    if (error) {
+        console.error('Error validating user rating:', error);
+        res.status(constants.STATUS_BAD_REQUEST).send(JSON.stringify({ error: error.details[0].message }));
+        return;
+    }
+    try {
+        await publisherChannel.sendEvent(constants.RATE_EXCHANGE, constants.RATE_QUEUE, JSON.stringify(req.body));
+        res.status(constants.STATUS_CREATED).send('Rate added successfully');
         return;
     }
     catch (error) {

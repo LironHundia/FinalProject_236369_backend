@@ -9,6 +9,8 @@ export const PAYMENT_API_URL = 'https://www.cs-wsp.net/_functions/pay';
 //Exchange and Queue names
 export const COMMENT_QUEUE = "comment_queue";
 export const COMMENT_EXCHANGE = "comment_exchange";
+export const RATE_QUEUE = "rate_queue";
+export const RATE_EXCHANGE = "rate_exchange";
 export const EVENT_UPDATE_QUEUE = "event_update_queue";
 export const EVENT_UPDATE_EXCHANGE = "event_update_exchange";
 export const USER_NEXT_EVENT_QUEUE = "user_nextEvent_queue";

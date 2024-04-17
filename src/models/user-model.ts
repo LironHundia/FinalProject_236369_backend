@@ -41,6 +41,18 @@ export const validateUserComment = (messageBody: any) => {
   return eventJoiSchema.validate(messageBody);
 }
 
+export const validateUserRate = (messageBody: any) => {
+  // Define the event schema
+  const rateJoiSchema = Joi.object({
+      eventId: Joi.string().required(),
+      username: Joi.string().required(),
+      rate: Joi.number().min(1).max(5).required(),
+  });
+
+  // Validate the message body
+  return rateJoiSchema.validate(messageBody);
+}
+
 export const validateUserCredentials = (messageBody: any) => {
   // Define the event schema
   const userJoiSchema = Joi.object({
