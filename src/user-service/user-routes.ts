@@ -91,15 +91,15 @@ export async function signup(req: Request, res: Response) {
 }
 
 export async function getSecurityQuestion(req: Request, res: Response) {
-    const credentials = req.body;
-    if (!credentials.username) {
+    const username = req.params.username;
+    if (!username) {
         res.status(constants.STATUS_BAD_REQUEST).send('Invalid credentials - Username is required');
         return;
     }
     let user;
 
     try {
-        user = await User.findOne({ username: credentials.username });
+        user = await User.findOne({ username: username });
 
         if (!user) {
             res.status(constants.STATUS_NOT_FOUND).send('No such user found');
