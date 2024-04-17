@@ -21,11 +21,11 @@ export const consumeMessages = async () => {
     await channel.bindQueue(queueAssert.queue, constants.COMMENT_EXCHANGE, '');
 
     // Declare the Rate exchange and queue
-    const updateExchange = constants.RATE_EXCHANGE; // Define your update exchange name
-    const updateQueue = constants.RATE_QUEUE; // Define your update queue name
-    await channel.assertExchange(updateExchange, 'direct', { durable: false });
-    const updateQueueAssert = await channel.assertQueue(updateQueue, { durable: false });
-    await channel.bindQueue(updateQueueAssert.queue, updateExchange, '');
+    const rateExchange = constants.RATE_EXCHANGE; // Define your update exchange name
+    const rateQueue = constants.RATE_QUEUE; // Define your update queue name
+    await channel.assertExchange(rateExchange, 'direct', { durable: false });
+    const updateQueueAssert = await channel.assertQueue(rateQueue, { durable: false });
+    await channel.bindQueue(updateQueueAssert.queue, rateExchange, '');
     // Consume messages from the Comment queue
     await channel.consume(queue, (msg) => {
       if (msg) {
@@ -36,7 +36,7 @@ export const consumeMessages = async () => {
     });
 
     // Consume messages from the Rate queue
-    await channel.consume(updateQueue, (msg) => {
+    await channel.consume(rateQueue, (msg) => {
       if (msg) {
         console.log(`Consumer (Rate) >>> received message: ${msg.content.toString()}`);
         HandleRate(msg.content.toString()); // Call the updateOrder function

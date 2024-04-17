@@ -46,7 +46,7 @@ export const validateUserRate = (messageBody: any) => {
   const rateJoiSchema = Joi.object({
       eventId: Joi.string().required(),
       username: Joi.string().required(),
-      rate: Joi.number().min(1).max(5).required(),
+      rate: Joi.number().min(0).max(5).required(),
   });
 
   // Validate the message body

@@ -62,6 +62,9 @@ app.get('/api/event',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), eve
 app.get('/api/event/all',checkPermissionProxyMiddleware(constants.MANAGER_LEVEL), eventProxy);
 app.get('/api/event/:eventId?',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), eventProxy);
 app.post('/api/event',checkPermissionProxyMiddleware(constants.MANAGER_LEVEL),  eventProxy);
+app.get('/api/comment/eventRate/:eventId', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), commentProxy);
+app.get('/api/comment/userRate/:username', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), commentProxy);
+app.get('/api/comment/rate', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), commentProxy);
 app.get('/api/comment/count/:eventId', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), commentProxy);
 app.get('/api/comment/:eventId', checkPermissionProxyMiddleware(constants.WORKER_LEVEL), commentProxy);
 app.get('/api/order/nextEvent/:userId?',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), orderProxy);

@@ -70,11 +70,11 @@ export async function getUserRatingForEvent(req: Request, res: Response) {
     try {
         const rate = await Rate.findOne({ eventId: eventId, username: username });
         if (rate) {
-            res.status(200).send(rate.rate);
+            res.status(200).json({rate: rate.rate});
             return;
         }
         else {
-            res.status(200).send(0);
+            res.status(200).json({rate: 0});
         }
     }
     catch (error) {
@@ -141,8 +141,10 @@ export const HandleRate = async (msg) => {
             }
         }
 
-        const newRate = new Rate({ eventId, rate, username });
-        await newRate.save();
+        else if (rate !== 0) {
+            const newRate = new Rate({ eventId, rate, username });
+            await newRate.save();
+        }
     } catch (error) {
         console.error('Error adding rate:', error);
     }
