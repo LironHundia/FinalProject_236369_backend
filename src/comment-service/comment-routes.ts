@@ -53,11 +53,20 @@ export async function getRatingAvgByEventId(req: Request, res: Response) {
     if (!eventId)
         return res.status(400).json({ error: 'EventId is required' });
     try {
-        const avg = await Rate.aggregate([{ $match: { eventId: eventId } }, { $group: { _id: null, avg: { $avg: "$rate" }, total: { $count: "$rate" } } }]);
-        res.status(200).json({ avg: avg[0].avg });
+        const result = await Rate.aggregate([{ $match: { eventId: eventId } }, {
+            $group: {
+                _id: null,
+                avg: { $avg: "$rate" },
+                total: { $sum: 1 } // Count the documents
+            }
+        }]);
+        const avg = result[0]?.avg || -1;
+        const totalCount = result[0]?.total || -1;
+
+        res.status(200).json({ avg, total: totalCount });
     }
     catch (error) {
-        console.error('Error fetching avg:', error);
+        console.error('Error fetching avg and count:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 }
@@ -70,11 +79,11 @@ export async function getUserRatingForEvent(req: Request, res: Response) {
     try {
         const rate = await Rate.findOne({ eventId: eventId, username: username });
         if (rate) {
-            res.status(200).json({rate: rate.rate});
+            res.status(200).json({ rate: rate.rate });
             return;
         }
         else {
-            res.status(200).json({rate: 0});
+            res.status(200).json({ rate: 0 });
         }
     }
     catch (error) {
