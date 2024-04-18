@@ -60,8 +60,8 @@ export async function getRatingAvgByEventId(req: Request, res: Response) {
                 total: { $sum: 1 } // Count the documents
             }
         }]);
-        const avg = result[0]?.avg || -1;
-        const totalCount = result[0]?.total || -1;
+        const avg = result[0]?.avg || 0;
+        const totalCount = result[0]?.total || 0;
 
         res.status(200).json({ avg, total: totalCount });
     }
