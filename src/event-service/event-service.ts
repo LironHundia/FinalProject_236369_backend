@@ -29,19 +29,22 @@ app.post('/api/event', eventRoute.addNewEvent);
 app.put('/api/event/:eventId?', eventRoute.updateEvent); 
 
 // Get All Events with Available Tickets
-app.get('/api/event', eventRoute.getAllAvailableEvents); //TODO - CHECK
+app.get('/api/event', eventRoute.getAllAvailableEvents);
+
+// Get max lowestPrice value
+app.get('/api/event/maxPrice', eventRoute.getMaxPrice);
 
 // Get All Events
-app.get('/api/event/all', eventRoute.getAllEvents); //TODO - CHECK
+app.get('/api/event/all', eventRoute.getAllEvents);
 
 // Get Single Event with comments array
 app.get('/api/event/:eventId', eventRoute.getEventById);
 
 // Secure Tickets
-app.post('/api/event/secure', eventRoute.secureTickets);  //TODO
+app.post('/api/event/secure', eventRoute.secureTickets);
 
 // Buy Tickets
-app.post('/api/event/confirm', eventRoute.buyTickets);  //TODO
+app.post('/api/event/confirm', eventRoute.buyTickets);
 
 // Delete All Events - for debugging
 app.delete('/api/event/empty', eventRoute.deleteAllEvents);

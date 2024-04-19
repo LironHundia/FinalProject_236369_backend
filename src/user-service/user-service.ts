@@ -58,6 +58,7 @@ const orderProxy = createProxyMiddleware({
 
 // Apply proxy middleware for specific routes
 app.put('/api/event/:eventId',checkPermissionProxyMiddleware(constants.MANAGER_LEVEL), eventProxy);
+app.get('/api/event/maxPrice',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), eventProxy);
 app.get('/api/event',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), eventProxy);
 app.get('/api/event/all',checkPermissionProxyMiddleware(constants.MANAGER_LEVEL), eventProxy);
 app.get('/api/event/:eventId?',checkPermissionProxyMiddleware(constants.WORKER_LEVEL), eventProxy);

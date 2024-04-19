@@ -25,7 +25,7 @@ export async function addNewEvent(req: Request, res: Response) {
         const totalAvailableTickets = req.body.tickets.reduce((sum, ticket) => sum + parseInt(ticket.availableQuantity), 0);
 
         // If validation passes, create a new Event document and save it to the database
-        const newEvent: IEvent = new Event({...req.body,lowestPrice,totalAvailableTickets});
+        const newEvent: IEvent = new Event({ ...req.body, lowestPrice, totalAvailableTickets });
         await newEvent.save();
 
         res.status(constants.STATUS_CREATED).send({ _id: newEvent.id });
@@ -127,9 +127,33 @@ export async function getEventById(req: Request, res: Response) {
     }
 }
 
+export async function getMaxPrice(req: Request, res: Response) {
+    try {
+        const maxPrice = await Event.aggregate([
+            {
+                $match: {
+                    totalAvailableTickets: { $gt: 0 }, // Match events with available tickets
+                    startDate: { $gt: new Date() } // Match events whose startDate has not yet arrived
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    maxLowestPrice: { $max: "$lowestPrice" }
+                }
+            }
+        ]);
+
+        res.status(200).json({maxPrice: maxPrice[0].maxLowestPrice});
+    } catch (error) {
+        res.status(500).send(error);
+    }
+}
+
 export async function getAllAvailableEvents(req: Request, res: Response) {
     const page = parseInt(req.query.page as string) || constants.DEFAULT_PAGE; //gets the page parameter from query params. defaulting to 1 if it's not provided.
     let limit = parseInt(req.query.limit as string) || constants.DEFAULT_LIMIT;
+    let minPrice = parseInt(req.query.minPrice as string) || 0;
     let sort = req.query.sort as string; //gets the sort parameter from query params. defaulting to 'asc' if it's not provided.
     limit = Math.min(limit, constants.DEFAULT_LIMIT); // limit is the minimum of the provided limit and DEFAULT_LIMIT
     const skip = (page - 1) * limit;
@@ -144,6 +168,7 @@ export async function getAllAvailableEvents(req: Request, res: Response) {
 
         const availableEvents = await Event.find({
             totalAvailableTickets: { $gt: 0 }, // Match events with available tickets
+            lowestPrice: { $gte: minPrice }, // Match events with a price greater than minPrice
             startDate: { $gt: new Date() } // Match events whose startDate has not yet arrived
         })
             .sort(sortObject as { [key: string]: mongoose.SortOrder }) // Sort by ticket price
@@ -175,10 +200,10 @@ export async function getAllEvents(req: Request, res: Response) {
         }
 
         const events = await Event.find()
-        .sort(sortObject as { [key: string]: mongoose.SortOrder }) // Sort by ticket price
-        .skip(skip) // Skip the first 'skip' documents
-        .limit(limit); // Limit the results to 'limit' documents
-        
+            .sort(sortObject as { [key: string]: mongoose.SortOrder }) // Sort by ticket price
+            .skip(skip) // Skip the first 'skip' documents
+            .limit(limit); // Limit the results to 'limit' documents
+
         res.status(constants.STATUS_OK).send(events);
     } catch (error) {
         console.error('Error getting events:', error);
