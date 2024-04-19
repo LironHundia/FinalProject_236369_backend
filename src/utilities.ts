@@ -75,6 +75,18 @@ export function setLimit(limit: any): number {
     return ret;
 }
 
+export function setOrderSkip(limit: any, page: any): number {
+    let ret = constants.DEFAULT_SKIP;
+
+    if (typeof limit === 'string' && typeof page === 'string') {
+        const parsedLimit = parseInt(limit, 10);
+        const parsedPage = parseInt(page, 10);
+        ret = parsedLimit * (parsedPage - 1);
+    }
+    return ret;
+
+}
+
 export function setSkip(skip: any): number {
     let ret = constants.DEFAULT_SKIP;
 

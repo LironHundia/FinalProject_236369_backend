@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Order } from '../models/order-model.js';
 import { set } from 'mongoose';
-import { setLimit, setSkip } from '../utilities.js';
+import { setLimit, setOrderSkip } from '../utilities.js';
 
 
 
@@ -56,7 +56,7 @@ export async function getOrdersByUserId(req: Request, res: Response) {
     }
 
     let limit = setLimit(req.query.limit);
-    let skip = setSkip(req.query.skip);
+    let skip = setOrderSkip(req.query.limit, req.query.page);
 
     try {
         const orders = await Order.find({ username: username }).skip(skip).limit(limit);
