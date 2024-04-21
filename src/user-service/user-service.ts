@@ -14,7 +14,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? 'https://lironhundia.github.io/FinalProject_236369_frontend' : 'http://localhost:5173', 
+  origin: ['https://lironhundia.github.io', 'https://lironhundia.github.io/FinalProject_236369_frontend/', 'http://localhost:5173'],
   credentials: true, 
 }));
 // Connect to MongoDB
