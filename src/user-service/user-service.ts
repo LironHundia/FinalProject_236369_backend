@@ -14,7 +14,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: ['https://lironhundia.github.io', 'https://lironhundia.github.io/FinalProject_236369_frontend/', 'http://localhost:5173'],
+  origin: ['https://lironhundia.github.io', 'https://lironhundia.github.io/FinalProject_236369_frontend/'],
   credentials: true, 
 }));
 // Connect to MongoDB
